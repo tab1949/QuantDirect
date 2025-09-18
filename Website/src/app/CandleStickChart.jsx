@@ -1,8 +1,7 @@
 'use client';
 import { useState, useEffect, useRef, useCallback } from "react";
-import styled from "styled-components";
 
-function Chart ({$dark, $data, $width, $height, $redRise=true, $displayRange={begin: 0, end: $data.date.length - 1, limit: $data.date.length - 1}}) {
+function Chart ({$dark, $data, $width, $height, $redRise=true, $displayRange={begin: 0, end: $data.date.length - 1, limit: $data.date.length - 1}, $aim={display: false, x: 0, y: 0}}) {
     const displayCount = $displayRange.end - $displayRange.begin + 1;
     const scaleSpace = (850 / (displayCount <= 5? displayCount: 20));
     const scaleSpaceSecondary = scaleSpace / 5;
@@ -12,6 +11,8 @@ function Chart ({$dark, $data, $width, $height, $redRise=true, $displayRange={be
     let   dateMarks = [];
     const stickSpace = 850 / displayCount;
     let   sticks = [];
+    let   aimX = 0, aimY = 0;
+    let   aim = [];
     const markColor = ($dark? '#d8d8d8': '#4c4c4c');
     const riseColor = ($redRise? 'red': 'green');
     const fallColor = ($redRise? 'green': 'red'); 
@@ -27,7 +28,19 @@ function Chart ({$dark, $data, $width, $height, $redRise=true, $displayRange={be
     const valueScale = (high > low ? 
         [high, low+(high-low)/3*2, low+(high-low)/3, low]:
         [high, high, high, high]);
-
+    
+    if ($aim.display) {
+        aimX = $aim.x / $width * 1000;
+        aimY = $aim.y / $height * 1000;
+        aimX += (aimX <= 150? 150: 0);
+        aimX = 150 + stickSpace * Math.floor((aimX - 150) / stickSpace);
+        aim.push(<line key={keyCounter++} x1={aimX} x2={aimX} y1={0} y2={1000} stroke={markColor} strokeWidth={1}/>);
+        aim.push(<line key={keyCounter++} x1={0} x2={1000} y1={aimY} y2={aimY} stroke={markColor} strokeWidth={1}/>);
+        if (aimY <= 900) {
+            aim.push(<rect key={keyCounter++} x={0} y={aimY-25} width={110} height={50} fill={$dark? '#242424': '#dedede'} stroke={markColor} strokeWidth={2}/>);
+            aim.push(<text key={keyCounter++} x={2} y={aimY+10} fill={markColor} fontSize={30}>{(high-(high-low)*aimY/900).toFixed(2)}</text>);
+        }
+    }
     for (let i = 0; i < scaleMarkCount; ++i) {
         let xpos = i * scaleSpace + 150;
         scaleMarks.push((<g key={keyCounter++}>
@@ -54,7 +67,7 @@ function Chart ({$dark, $data, $width, $height, $redRise=true, $displayRange={be
                 <line key={keyCounter++}
                 x1={x} y1={50+yUnit*(high-$data.low[j])}
                 x2={x} y2={50+yUnit*(high-$data.high[j])}
-                stroke={fallColor} strokeWidth={'3px'}/>
+                stroke={fallColor} strokeWidth={4}/>
             </g>);
         }
         else if ($data.open[j] < $data.close[j]) {
@@ -66,7 +79,7 @@ function Chart ({$dark, $data, $width, $height, $redRise=true, $displayRange={be
                 <line key={keyCounter++}
                 x1={x} y1={50+yUnit*(high-$data.low[j])}
                 x2={x} y2={50+yUnit*(high-$data.high[j])}
-                stroke={riseColor} strokeWidth={'3px'}/>
+                stroke={riseColor} strokeWidth={4}/>
             </g>);
         }
         else {
@@ -74,11 +87,11 @@ function Chart ({$dark, $data, $width, $height, $redRise=true, $displayRange={be
                 <line key={keyCounter++}
                 x1={x-0.3*stickSpace} y1={50+yUnit*(high-$data.close[j])}
                 x2={x+0.3*stickSpace} y2={50+yUnit*(high-$data.close[j])}
-                stroke={markColor} strokeWidth={'3px'}/>
+                stroke={markColor} strokeWidth={4}/>
                 <line key={keyCounter++}
                 x1={x} y1={50+yUnit*(high-$data.low[j])}
                 x2={x} y2={50+yUnit*(high-$data.high[j])}
-                stroke={markColor} strokeWidth={'3px'}/>
+                stroke={markColor} strokeWidth={4}/>
             </g>)
         }
     }
@@ -102,11 +115,12 @@ function Chart ({$dark, $data, $width, $height, $redRise=true, $displayRange={be
                 <text key={keyCounter++} x={3} y={y} fill={'#808080'} fontSize={30}>{v.toFixed(2)}</text>
             </g>
         })}
-        {sticks.map((v, i) => {return v})}
+        {sticks.map((v, i) => {return v;})}
+        {aim.map((v, i) => {return v;})}
     </svg>);
 }
 
-function ControlArea({$width, $height, $displayRange, $setDisplayRange}) {
+function ControlArea({$width, $height, $displayRange, $setDisplayRange, $setAim}) {
     const longPressTimer = useRef(null);
     const debounceTimer = useRef(null);
     const wheelTimer = useRef(null);
@@ -120,15 +134,15 @@ function ControlArea({$width, $height, $displayRange, $setDisplayRange}) {
         setIsPressed(true);
         const rect = elementRef.current.getBoundingClientRect();
         setPosition({x: e.clientX - rect.left, y: e.clientY - rect.top});
+        $setAim({display: false, x: 0, y: 0});
         longPressTimer.current = setTimeout(() => {
             setIsLongPress(true);
-        }, 500);
+            $setAim({display: true, x: position.x, y: position.y});
+        }, 400);
     }, []);
     const mouseMove = useCallback((e) => {
         if (!isPressed) return;
-        if (debounceTimer.current) {
-            clearTimeout(debounceTimer.current);
-        }
+        if (debounceTimer.current) return;
         debounceTimer.current = setTimeout(() => {
             const rect = elementRef.current.getBoundingClientRect();
             const currentPos = {x: e.clientX - rect.left, y: e.clientY - rect.top};
@@ -138,7 +152,7 @@ function ControlArea({$width, $height, $displayRange, $setDisplayRange}) {
             longPressTimer.current = null;
             if (!isLongPress) {
                 setIsChangingRange(true);
-                const stickWidth = 850 / ($displayRange.end - $displayRange.begin) / 5;
+                const stickWidth = 850 / ($displayRange.end - $displayRange.begin) / 10;
                 if (Math.abs(xMove) >= stickWidth) {
                     if (xMove > 0) { // Left dragging
                         if ($displayRange.begin > 0) {
@@ -159,13 +173,22 @@ function ControlArea({$width, $height, $displayRange, $setDisplayRange}) {
                             limit: $displayRange.limit});
                     }
                 }
+                $setAim({display: false, x: 0, y: 0});
             }
             else {
                 setIsChangingRange(false);
+                $setAim({
+                    display: true,
+                    x: currentPos.x,
+                    y: currentPos.y
+                });
             }
             setPosition(currentPos);
-        }, 5);
-    }, [isPressed, isLongPress, debounceTimer]);
+            const temp = debounceTimer;
+            debounceTimer.current = null;
+            clearTimeout(temp.current);
+        }, 20);
+    }, [position, isPressed, isLongPress, debounceTimer]);
     const mouseUp = useCallback((e) => {
         if (longPressTimer.current) {
             clearTimeout(longPressTimer.current);
@@ -179,20 +202,22 @@ function ControlArea({$width, $height, $displayRange, $setDisplayRange}) {
         setIsPressed(false);
         e.preventDefault();
         
-        if (wheelTimer.current) {
-            clearTimeout(wheelTimer.current);
-            wheelTimer.current = null;
-        }
+        if (wheelTimer.current) return;
+
         wheelTimer.current = setTimeout(() => {
-            if (e.deltaY < 0) { // Down
+            if (e.deltaY < 0) { // Up
                 if ($displayRange.end - $displayRange.begin < $displayRange.limit) {
                     let leftVar = Math.ceil(-e.deltaY / 50);
+                    let rightVar = 0;
                     if ($displayRange.begin - leftVar < 0) {
+                        rightVar += leftVar - ($displayRange.begin + 1);
+                        if ($displayRange.end + rightVar > $displayRange.limit)
+                                rightVar = $displayRange.limit - $displayRange.end;
                         leftVar = $displayRange.begin;
                     }
                     $setDisplayRange({
                         begin: $displayRange.begin - leftVar,
-                        end: $displayRange.end,
+                        end: $displayRange.end + rightVar,
                         limit: $displayRange.limit
                     });
                 }
@@ -210,7 +235,10 @@ function ControlArea({$width, $height, $displayRange, $setDisplayRange}) {
                     });
                 }
             }
-        }, 5);
+            const temp = wheelTimer;
+            wheelTimer.current = null;
+            clearTimeout(temp.current);
+        }, 20);
     });
     
     return <div style={{
@@ -227,25 +255,19 @@ function ControlArea({$width, $height, $displayRange, $setDisplayRange}) {
     onMouseDown={mouseDown}
     onMouseMove={mouseMove}
     onMouseUp={mouseUp} onMouseOut={mouseUp} onMouseLeave={mouseUp}
-    onWheel={changeScale}>{isPressed?(isLongPress?'long':'short'):'none'}{isChangingRange?' changing':' '}</div>
+    onWheel={changeScale}></div>
 }
 
-export default function CandleStickChart({$dark, $width = 1000, $height = 1000}) {
-    let data = {
-        date: ['01/01', '01/02', '01/03', '01/04', '01/05', '01/08', '01/09', '01/10', '01/11', '01/12', '01/15'],
-        open: [900, 990, 980.3, 1110, 1130, 1150, 1143, 1132, 1149, 1166, 1151.4],
-        close: [980, 940, 1100, 1110, 1130, 1120, 1142, 1151, 1149, 1164.3, 1130],
-        high: [1050.0, 1000.0, 1100.0, 1110.0, 1136.5, 1151, 1143, 1133.3, 1155, 1171, 1155],
-        low: [880.0, 932.1, 966.0, 1110.0, 1125.5, 1120, 1142, 1131, 1142.8, 1164, 1130],
-    };
-    const [displayRange, setDisplayRange] = useState({begin: 0, end: data.date.length - 7, limit: data.date.length - 1});
+export default function CandleStickChart({$dark, $width = 1000, $height = 1000, $data}) { 
+    const [displayRange, setDisplayRange] = useState({begin: 0, end: $data.date.length - 7, limit: $data.date.length - 1});
+    const [aim, setAim] = useState({display: false, x: 0, y: 0});
     return (<div style={{
         backgroundColor: $dark? '#111111': '#f4f4f4',
         width: $width + 20,
         height: $height + 20,
         padding: '10px',
         borderRadius: '10px'}}>
-        <Chart $dark={$dark} $data={data} $width={$width} $height={$height} $displayRange={displayRange}/>
-        <ControlArea $width={$width} $height={$height} $displayRange={displayRange} $setDisplayRange={setDisplayRange}/>
+        <Chart $dark={$dark} $data={$data} $width={$width} $height={$height} $displayRange={displayRange} $aim={aim}/>
+        <ControlArea $width={$width} $height={$height} $displayRange={displayRange} $setDisplayRange={setDisplayRange} $setAim={setAim}/>
     </div>);
 }

@@ -1,10 +1,10 @@
 'use client';
 
-import Image from "next/image";
 import { useState } from "react";
 import styled, { keyframes, css } from "styled-components";
 import CandleStickChart from "./CandleStickChart";
 import SettingsIcon from "./SVGIcons";
+import FetchData from "./FetchData";
 
 const color_dark_to_light = keyframes`
   from {
@@ -52,6 +52,8 @@ const CommonHeader = styled.div`
 `;
 
 const HeaderElement = styled.button`
+  -ms-user-select: none;
+  user-select: none;
   background-color: #ffffff00;
   position: relative;
   display: flex;
@@ -100,6 +102,7 @@ const SettingsMenuL1 = styled.div`
 `;
 
 const SettingsMenuOptions = styled.button`
+  user-select: none;
   background-color: rgba(121, 143, 173, 0.25);
   color: var(--theme-font-color);
   display: flex;
@@ -121,6 +124,13 @@ const SettingsMenuOptions = styled.button`
 export default function Home() {
   const [darkMode, setDarkMode] = useState(true);
   const [settingsOpened, setSettingsOpened] = useState(false);
+  const testData = {
+      date: ['01/01', '01/02', '01/03', '01/04', '01/05', '01/08', '01/09', '01/10', '01/11', '01/12', '01/15'],
+      open: [900, 990, 980.3, 1110, 1130, 1150, 1143, 1132, 1149, 1166, 1151.4],
+      close: [980, 940, 1100, 1110, 1130, 1120, 1142, 1151, 1149, 1164.3, 1130],
+      high: [1050.0, 1000.0, 1100.0, 1110.0, 1136.5, 1151, 1143, 1133.3, 1155, 1171, 1155],
+      low: [880.0, 932.1, 966.0, 1110.0, 1125.5, 1120, 1142, 1131, 1142.8, 1164, 1130],
+  };
   
   return (
     <body>
@@ -145,7 +155,7 @@ export default function Home() {
             top:'100px',
             width:'0',
             height:'0'
-          }}><CandleStickChart $dark={darkMode} $width={500} $height={300}></CandleStickChart></div>
+          }}><CandleStickChart $dark={darkMode} $width={500} $height={300} $data={testData}></CandleStickChart></div>
         </CommonBody>
         <CommonFooter></CommonFooter>
       </Page> 
