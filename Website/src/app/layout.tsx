@@ -1,0 +1,21 @@
+import type { Metadata } from "next";
+import StyledComponentRegistry from "./StyledComponentsRegistry";
+import { GlobalStyle } from "./GlobalStyle";
+
+export const metadata: Metadata = {
+  title: "MarketDirect",
+  description: "",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="en">
+      <GlobalStyle></GlobalStyle>
+      <StyledComponentRegistry>{children}</StyledComponentRegistry>
+    </html>
+  );
+}
