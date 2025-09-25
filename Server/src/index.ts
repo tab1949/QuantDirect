@@ -2,8 +2,11 @@ import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import apiRouter from './routes/index';
 import logger from './logger';
+import dataService from './database/dataService';
+import config from './config.json';
 
 const app = express();
+const data = dataService(config["upstream"]);
 const port = process.env.PORT ? parseInt(process.env.PORT) : 4000;
 // Allow overriding API base path via env
 const API_BASE = process.env.API_BASE || '/api';
@@ -27,3 +30,5 @@ app.use(API_BASE, apiRouter);
 app.listen(port, () => {
   logger.info(`Server listening on port ${port} (API base: ${API_BASE})`);
 });
+
+data.run();

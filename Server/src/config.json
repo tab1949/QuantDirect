@@ -1,0 +1,7 @@
+{
+    "upstream": {
+        "name": "tushare",
+        "url_root": "http://api.tushare.pro",
+        "token": "46a0a2d4fdc0268a2d9bcf01d54f36251d026778563cb15c9c82e10b"
+    }
+}

@@ -1,6 +1,7 @@
 # directories
 .github
 .git
+Server/test/data
 
 # log
 *.log
