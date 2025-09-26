@@ -6,7 +6,7 @@ import dataService from './database/dataService';
 import config from './config.json';
 
 const app = express();
-const data = dataService(config["upstream"]);
+const data = dataService(config);
 const port = process.env.PORT ? parseInt(process.env.PORT) : 4000;
 // Allow overriding API base path via env
 const API_BASE = process.env.API_BASE || '/api';
@@ -27,8 +27,36 @@ app.get(`${API_BASE}/echo`, (req: Request, res: Response) => {
 // Mount consolidated API router (routes/index.ts handles subpaths)
 app.use(API_BASE, apiRouter);
 
-app.listen(port, () => {
+app.listen(port, async () => {
   logger.info(`Server listening on port ${port} (API base: ${API_BASE})`);
+  
+  try {
+    await data.run();
+  } catch (error) {
+    logger.error('Failed to start data service:', error);
+    process.exit(1);
+  }
 });
 
-data.run();
+
+process.on('SIGINT', async () => {
+  logger.info('Received SIGINT, shutting down gracefully...');
+  try {
+    await data.stop();
+    process.exit(0);
+  } catch (error) {
+    logger.error('Error during shutdown:', error);
+    process.exit(1);
+  }
+});
+
+process.on('SIGTERM', async () => {
+  logger.info('Received SIGTERM, shutting down gracefully...');
+  try {
+    await data.stop();
+    process.exit(0);
+  } catch (error) {
+    logger.error('Error during shutdown:', error);
+    process.exit(1);
+  }
+});
