@@ -12,7 +12,6 @@ class RedisService {
 
     public async init(): Promise<void> {
         await this.redisClient.connect();
-        logger.info('Redis service initialized');
     }
 
     public async stop(): Promise<void> {
@@ -20,9 +19,9 @@ class RedisService {
         logger.info('Redis service shutdown');
     }
 
-    public async getFuturesList(exchange: string) {
+    public async getContractsList(exchange: string): Promise<any> {
         try {
-
+            return this.redisClient.getJson(`${exchange}:contracts`);
         }
         catch(err) {
             logger.error('Failed to get futures list from Redis:', err);
@@ -30,15 +29,26 @@ class RedisService {
         }
     }
 
-    public async updateFuturesList(data: any, exchange: string, date: string): Promise<void> {
+    public async getContractInfo(contract: string): Promise<any> {
         try {
-            const codeList = data.items.map((item: any) => item.symbol);
-            await this.redisClient.set(`${exchange}:codes`, JSON.stringify({codeList}));
-            await this.redisClient.set(`${exchange}:codes:update_date`, data);
-            data.items.forEach((item: any) => {
-                this.redisClient.set(`futures:info:${item.symbol}`, JSON.stringify(item));
-            });
-            logger.info(`Updated futures list for ${exchange} in Redis`);
+            return this.redisClient.getJson(`contract:${contract}:info`);
+        }
+        catch (err) {
+            throw err;
+        }
+    }
+
+    public async setFuturesList(data: any, exchange: string, date: string): Promise<void> {
+        try {
+            let contractList = [];
+            for (let item of data.items) {
+                contractList.push(item[1]);
+            }
+            await this.redisClient.set(`${exchange}:contracts`, JSON.stringify({contractList}));
+            await this.redisClient.set(`${exchange}:codes:update_date`, date);
+            for (let item of data.items) {
+                this.redisClient.set(`contract:${item[1]}:info`, JSON.stringify(item));
+            }
         }
         catch(err) {
             logger.error('Failed to update futures list in Redis:', err);
@@ -105,6 +115,14 @@ class RedisService {
         } catch (error) {
             logger.error('Redis health check failed:', error);
             return false;
+        }
+    }
+
+    public async flush(): Promise<void> {
+        try {
+            this.redisClient.flushDb();
+        } catch (e) {
+            logger.error(`Flush DB failed, error: ${e}`);
         }
     }
 

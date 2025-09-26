@@ -3,10 +3,12 @@ import cors from 'cors';
 import apiRouter from './routes/index';
 import logger from './logger';
 import dataService from './database/dataService';
+import setDataSource from './services/redisFetchService';
 import config from './config.json';
 
 const app = express();
 const data = dataService(config);
+setDataSource(data);
 const port = process.env.PORT ? parseInt(process.env.PORT) : 4000;
 // Allow overriding API base path via env
 const API_BASE = process.env.API_BASE || '/api';

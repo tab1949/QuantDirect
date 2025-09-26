@@ -1,7 +1,7 @@
 # directories
 .github
 .git
-Server/test/data
+Server/data_backup
 
 # log
 *.log

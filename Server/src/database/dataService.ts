@@ -16,13 +16,18 @@ constructor(config: any) {
 
 public async run(): Promise<void> {
     try {
-        // 初始化Redis服务
+        // Initialize Redis service
         this.redisService = new RedisService(this.config.redis);
-        await this.redisService.init();
-        logger.info("Redis service initialized in main process");
+        try {
+            await this.redisService.init();
+            logger.info("Redis service initialized in main process");
+        }
+        catch (e) {
+            logger.error(`Redis service initialization failed, error: ${e}`);
+        }
 
-        // 启动worker
-        this.worker = new Worker(path.join(__dirname, 'worker.ts'), {workerData: this.config.upstream});
+
+        this.worker = new Worker(path.join(__dirname, 'worker.ts'), {workerData: { upstream: this.config.upstream, redis: this.config.redis }});
         this.worker.on('message', (msg) => {
             logger.info(msg);
         });
@@ -122,16 +127,29 @@ public async getMarketData(symbol?: string, dataType: string = 'market'): Promis
     }
 }
 
-public async getFuturesList(exchange?: string): Promise<any> {
+public async getContractsList(exchange: string): Promise<any> {
     if (!this.redisService) {
         throw new Error('Redis service not initialized');
     }
     
     try {
-        
+        return this.redisService.getContractsList(exchange);
     } catch (error) {
         logger.error('Get futures list error:', error);
         throw error;
+    }
+}
+
+public async getContractInfo(contract: string): Promise<any> {
+    if (!this.redisService) {
+        throw new Error('Redis service not initialized');
+    }
+
+    try {
+        return this.redisService.getContractInfo(contract);
+    } catch (e) {
+        logger.error(`Get contract info error: ${e}`);
+        throw e;
     }
 }
 

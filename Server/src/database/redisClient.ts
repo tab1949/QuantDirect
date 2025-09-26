@@ -32,11 +32,11 @@ class RedisClient {
             });
 
             this.client.on('connect', () => {
-                logger.info('Redis client connected');
+                
             });
 
             this.client.on('ready', () => {
-                logger.info('Redis client ready');
+                
             });
 
             this.client.on('end', () => {

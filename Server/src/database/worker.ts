@@ -5,7 +5,7 @@ import fs from "fs";
 import { getRequestData, fetchFromUpstream, DataType } from "./upstream";
 import RedisService from "./redisService";
 
-const config = workerData;
+const workerConfig: { upstream: any; redis: any } = workerData as any;
 let redisService: RedisService | null = null;
 
 async function fetchCurrentFuturesList(): Promise<void> {
@@ -16,33 +16,65 @@ async function fetchCurrentFuturesList(): Promise<void> {
 
     const exchanges = ['DCE', 'CFFEX', 'CZCE', 'GFEX', 'INE', 'SHFE'];
     
-    let requestData = getRequestData(config, DataType.FUTURES_LIST);
-    requestData.body.params.date = new Date().toISOString().slice(0,10).replace(/-/g, '');
+    let requestData = getRequestData(workerConfig.upstream, DataType.FUTURES_LIST);
+
+    const backup_dir: string = workerConfig.upstream.backup_dir;
+    const currentDate = new Date().toISOString().slice(0,10).replace(/-/g, '');
+    let listDate = currentDate;
+    logger.info("-------Tradable Lists Update--------");
+    try {
+        fs.readdirSync(backup_dir);
+    }
+    catch (e) {
+        logger.warn(`Directory ${backup_dir} is not existed, attempt to create...`);
+        fs.mkdirSync(backup_dir);
+        logger.info(`Created ${backup_dir}, backup files will be placed here.`);
+        logger.info("Attempt to fetch history data...");
+        await redisService.flush();
+        listDate = "";
+    }
     for (const exchange of exchanges) {
         try {
             requestData.body.params.exchange = exchange;
+            requestData.body.params.list_date = listDate;
+
+            let resp = await fetchFromUpstream(requestData);
+            let data = resp.data.data;
             
-            const resp = await fetchFromUpstream(requestData);
-            
-            if (resp.data.code === 0) {
-                const tradeCodes = resp.data.data.items.map((item: any) => (item.symbol));
-                
-                // Save to Redis
-                await redisService.updateFuturesList(resp.data.data, exchange, requestData.body.params.date);
-                
+            if (resp.data.code !== 0) {
+                logger.error(`${exchange}: API error - ${data.msg}`);
+                continue;
+            } 
+            if (data.items.length > 0) { // List updated
+                let tradeCodes = new Array<string>;
+                if (data.items.length <= 50) {
+                    for (let item of data.items) {
+                        tradeCodes.push(item[1]);
+                    }
+                    logger.info(`New contract(s): ${tradeCodes}`);
+                }
+                else {
+                    logger.info(`${data.items.length} ${exchange} contracts fetched (more than 50 contracts).`)
+                }
+                // Fetch all contracts
+                requestData.body.params.list_date = "";
+                resp = await fetchFromUpstream(requestData);
+                data = resp.data.data;
                 // Save to local file for backup
-                fs.writeFile(`./data_backup/list_${exchange}.json`, JSON.stringify(resp.data.data), (err) => {
-                    if (err) logger.error(`Error writing ./data_backup/list_${exchange}.json:`, err);
+                const fileName = `${backup_dir}/list_${exchange}_${currentDate}.json`;
+                fs.writeFile(fileName, JSON.stringify(data), (err) => {
+                    if (err) logger.error(`Error writing ${fileName}`, err);
                 });
-                
-                logger.info(`${exchange}: updated ${tradeCodes.length} items to Redis and data_backup/list_${exchange}.json.`);
-            } else {
-                logger.error(`${exchange}: API error - ${resp.data.msg}`);
-            }
+                // Save to Redis
+                await redisService.setFuturesList(data, exchange, listDate);
+                logger.info(`${exchange}: updated ${tradeCodes.length} items to Redis and ${fileName}.`);
+            } 
         } catch (error) {
             logger.error(`Error fetching futures list for ${exchange}:`, error);
+            throw error;
         }
     }
+    logger.info("-------Tradable Lists Update--------");
 }
 
 parentPort?.on("message", async (msg) =>  {
@@ -50,7 +82,7 @@ parentPort?.on("message", async (msg) =>  {
     case "start":
         try {
             // 初始化Redis服务
-            redisService = new RedisService(config.redis);
+            redisService = new RedisService(workerConfig.redis);
             await redisService.init();
             parentPort?.postMessage("Redis service initialized.");
         } catch (error) {
@@ -60,19 +92,14 @@ parentPort?.on("message", async (msg) =>  {
         break;
     case "check-updates":
         try {
-            let update = {
-                market: "Futures, Stocks, ",
-                type: "1min, ",
-                info: "Market data updated."
-            };
-            parentPort?.postMessage(`Data update available.\nMarket: ${update.market};\nType: ${update.type};\nInfo: ${update.info}`);
+            
         } catch (error) {
             logger.error("Error in check-updates:", error);
         }
         break;
     case "check-updates-lists":
         try {
-            parentPort?.postMessage("Checking updates for tradable lists...");
+            parentPort?.postMessage("Checking updates for futures lists...");
             await fetchCurrentFuturesList();
             parentPort?.postMessage("Futures lists updated successfully");
         } catch (error) {

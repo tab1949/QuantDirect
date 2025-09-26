@@ -2,12 +2,13 @@ import { Request, Response } from 'express';
 import * as futuresService from '../services/futuresService';
 
 export async function list(req: Request, res: Response) {
-  const data = await futuresService.getFuturesList();
+  const { symbol } = req.params;
+  const data = await futuresService.getContractsList(symbol);
   res.json(data);
 }
 
-export async function getBySymbol(req: Request, res: Response) {
+export async function getInfoBySymbol(req: Request, res: Response) {
   const { symbol } = req.params;
-  const item = await futuresService.getFutureBySymbol(symbol);
+  const item = await futuresService.getContractBySymbol(symbol.toUpperCase());
   res.json(item);
 }
