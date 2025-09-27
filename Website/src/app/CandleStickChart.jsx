@@ -53,8 +53,8 @@ const Chart = memo(function Chart({$dark, $data, $width, $height, $redRise=true,
         
         let aimX = $aim.x / $width * 1000;
         let aimY = $aim.y / $height * 1000;
-        aimX += (aimX <= 150? 150: 0);
-        aimX = 150 + stickSpace * Math.floor((aimX - 150) / stickSpace);
+        if (aimX < 150) aimX = 150;
+        aimX = 150 + stickSpace * Math.round((aimX - 150) / stickSpace);
         
         const elements = [
             <line key="aim-vertical" x1={aimX} x2={aimX} y1={0} y2={1000} stroke={markColor} strokeWidth={1}/>,
@@ -206,10 +206,15 @@ const ControlArea = memo(function ControlArea({$width, $height, $displayRange, $
     const wheelTimer = useRef(null);
     const elementRef = useRef(null);
     const latestPosRef = useRef({x: 0, y: 0});
+    const displayRangeRef = useRef($displayRange);
+    const isProcessingMove = useRef(false);
     const [isPressed, setIsPressed] = useState(false);
     const [isLongPress, setIsLongPress] = useState(false);
-    const [isChangingRange, setIsChangingRange] = useState(false);
-    const [position, setPosition] = useState({x: 0, y: 0});
+    
+    // Update ref when displayRange changes
+    useEffect(() => {
+        displayRangeRef.current = $displayRange;
+    }, [$displayRange]);
 
     // Memoize callbacks to prevent unnecessary re-renders
     const mouseDown = useCallback((e) => {
@@ -217,7 +222,6 @@ const ControlArea = memo(function ControlArea({$width, $height, $displayRange, $
         const rect = elementRef.current.getBoundingClientRect();
         const pos = {x: e.clientX - rect.left, y: e.clientY - rect.top};
         latestPosRef.current = pos;
-        setPosition(pos);
         $setAim({display: false, x: 0, y: 0});
         longPressTimer.current = setTimeout(() => {
             setIsLongPress(true);
@@ -227,9 +231,12 @@ const ControlArea = memo(function ControlArea({$width, $height, $displayRange, $
     
     const mouseMove = useCallback((e) => {
         if (!isPressed) return;
-        if (debounceTimer.current) return;
+        if (debounceTimer.current || isProcessingMove.current) return;
         
         debounceTimer.current = setTimeout(() => {
+            if (isProcessingMove.current) return; // Double check
+            
+            isProcessingMove.current = true;
             const rect = elementRef.current.getBoundingClientRect();
             const currentPos = {x: e.clientX - rect.left, y: e.clientY - rect.top};
             const xMove = currentPos.x - latestPosRef.current.x;
@@ -238,39 +245,42 @@ const ControlArea = memo(function ControlArea({$width, $height, $displayRange, $
             longPressTimer.current = null;
             
             if (!isLongPress) {
-                setIsChangingRange(true);
-                const range = $displayRange.end - $displayRange.begin;
-                const stickWidth = range > 0 ? 850 / range / 10 : Infinity;
+                // Get current range from ref to avoid dependency on $displayRange
+                const currentRange = displayRangeRef.current;
+                const range = currentRange.end - currentRange.begin + 1;
+                const stickWidth = range > 0 ? 850 / range / 2: Infinity;
                 
                 if (Math.abs(xMove) >= stickWidth && isFinite(stickWidth)) {
-                    const moveCount = Math.floor(Math.abs(xMove) / stickWidth);
-                    if (xMove > 0) {
-                        $setDisplayRange(dr => ({
-                            begin: Math.max(0, dr.begin - moveCount),
-                            end: Math.max(0, dr.end - moveCount),
-                            limit: dr.limit
-                        }));
-                    } else {
-                        $setDisplayRange(dr => ({
-                            begin: Math.min(dr.limit - (dr.end - dr.begin), dr.begin + moveCount),
-                            end: Math.min(dr.limit, dr.end + moveCount),
-                            limit: dr.limit
-                        }));
+                    const moveCount = xMove < 0 ? Math.ceil(xMove / stickWidth): Math.floor(xMove / stickWidth);
+                    
+                    let newRange = $displayRange;
+                    if (newRange.begin - moveCount < 0) {
+                        newRange.end -= newRange.begin;
+                        newRange.begin = 0;
                     }
+                    else if (newRange.end - moveCount > newRange.limit) {
+                        newRange.begin += newRange.limit - newRange.end;
+                        newRange.end = newRange.limit;
+                    }
+                    else {
+                        newRange.begin -= moveCount;
+                        newRange.end -= moveCount;
+                    }
+                    $setDisplayRange({begin: newRange.begin, end: newRange.end, limit: newRange.limit});
+                    latestPosRef.current = currentPos;
                 }
                 $setAim({display: false, x: 0, y: 0});
             } else {
-                setIsChangingRange(false);
                 $setAim({
                     display: true,
                     x: currentPos.x,
                     y: currentPos.y
                 });
             }
-            
-            setPosition(currentPos);
-            latestPosRef.current = currentPos;
-            setTimeout(() => { debounceTimer.current = null; }, 0);
+    
+            // Clear flags after processing
+            isProcessingMove.current = false;
+            debounceTimer.current = null;
         }, 20);
     }, [isPressed, isLongPress, $displayRange, $setDisplayRange, $setAim]);
     
@@ -279,14 +289,17 @@ const ControlArea = memo(function ControlArea({$width, $height, $displayRange, $
             clearTimeout(longPressTimer.current);
             longPressTimer.current = null;
         }
+        if (debounceTimer.current) {
+            clearTimeout(debounceTimer.current);
+            debounceTimer.current = null;
+        }
+        isProcessingMove.current = false;
         setIsPressed(false);
         setIsLongPress(false);
-        setIsChangingRange(false);
     }, []);
     
     const changeScale = useCallback((e) => {
         setIsPressed(false);
-        e.preventDefault();
         
         if (wheelTimer.current) return;
 
@@ -328,15 +341,7 @@ const ControlArea = memo(function ControlArea({$width, $height, $displayRange, $
 });
 
 export default function CandleStickChart({$dark, $width = 1000, $height = 1000, $data}) { 
-    // Memoize initial state calculation
-    const initialState = useMemo(() => {
-        const len = $data.date.length;
-        const end = Math.max(0, len - 1);
-        const begin = Math.max(0, end - 6);
-        return {begin, end, limit: end};
-    }, [$data.date.length]);
-    
-    const [displayRange, setDisplayRange] = useState(initialState);
+    const [displayRange, setDisplayRange] = useState({begin: 0, end: $data.date.length - 1, limit: $data.date.length - 1});
     const [aim, setAim] = useState({display: false, x: 0, y: 0});
     
     // Memoize container styles

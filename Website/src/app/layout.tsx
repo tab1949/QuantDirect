@@ -3,8 +3,8 @@ import StyledComponentRegistry from "./StyledComponentsRegistry";
 import { GlobalStyle } from "./GlobalStyle";
 
 export const metadata: Metadata = {
-  title: "MarketDirect",
-  description: "",
+  title: "QuantDirect",
+  description: "A platform and community for financial analyzing",
 };
 
 export default function RootLayout({

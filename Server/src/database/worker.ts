@@ -67,7 +67,7 @@ async function fetchCurrentFuturesList(): Promise<void> {
                 });
                 // Save to Redis
                 await redisService.setFuturesList(data, exchange, listDate);
-                logger.info(`${exchange}: updated ${tradeCodes.length} items to Redis and ${fileName}.`);
+                logger.info(`${exchange}: updated ${data.items.length} items to Redis and ${fileName}.`);
             } 
         } catch (error) {
             logger.error(`Error fetching futures list for ${exchange}:`, error);

@@ -1,2 +1,2 @@
-# MarketDirect
-A platform and community for financial analysis
+# QuantDirect
+A platform and community for financial analyzing
