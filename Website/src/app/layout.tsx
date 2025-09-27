@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import StyledComponentRegistry from "./StyledComponentsRegistry";
 import { GlobalStyle } from "./GlobalStyle";
+import I18nProvider from "./locales/i18n-provider"; 
 
 export const metadata: Metadata = {
   title: "QuantDirect",
@@ -15,7 +16,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <GlobalStyle></GlobalStyle>
-      <StyledComponentRegistry>{children}</StyledComponentRegistry>
+      <StyledComponentRegistry>
+        <I18nProvider>{children}</I18nProvider>
+      </StyledComponentRegistry>
     </html>
   );
 }

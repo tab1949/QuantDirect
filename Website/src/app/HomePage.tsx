@@ -99,17 +99,25 @@ export const SettingsMenuL1 = styled.div<{ $darkMode: boolean}>`
     '0 10px 25px rgba(255, 255, 255, 0.1)' : 
     '0 10px 25px rgba(0, 0, 0, 0.1)'};
   position: fixed;
+  --width: calc(5vw + 120px);
+  width: var(--width);
+  height: auto;
+  right: 1px;
   display: grid;
   grid-column: 1;
   align-items: start;
   justify-items: start;
-  width: calc(10vw + 80px);
-  height: auto;
   border-radius: 8px;
-  right: 1px;
 `;
 
-export const SettingsMenuOptions = styled.button<{ $darkMode: boolean}>`
+export const SettingsMenuL2 = styled(SettingsMenuL1)`
+    position: fixed;
+    right: calc(var(--width) + 2px);
+    width: auto;
+    height: auto;
+`;
+
+export const SettingsOption = styled.button<{ $darkMode: boolean}>`
   user-select: none;
   --normal-bg-color: rgba(121, 143, 173, 0.087);
   --hover-bg-color: ${props => props.$darkMode ? 'rgba(90, 100, 112, 0.3)' : 'rgba(209, 213, 219, 0.6)'};
