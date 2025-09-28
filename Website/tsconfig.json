@@ -22,6 +22,6 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "src/app/StyledComponentsRegistry.jsx", "src/app/CandleStickChart.jsx"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "src/app/StyledComponentsRegistry.jsx", "src/app/components/CandleStickChart.jsx"],
   "exclude": ["node_modules"]
 }
