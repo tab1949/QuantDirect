@@ -1,2 +1,2 @@
 # QuantDirect
-A platform and community for financial analyzing
+A platform for quant researchers to analysis and communicate
