@@ -1,11 +1,27 @@
 {
-    "explore": "探索",
-    "analysis": "分析",
-    "community": "社区",
-    "help": "帮助",
-    "dashboard": "仪表盘",
-    "theme": "主题",
-    "dark": "深色",
-    "light": "浅色",
-    "language": "语言"
+    "basic": {
+        "explore": "探索",
+        "analysis": "分析",
+        "community": "社区",
+        "help": "帮助",
+        "dashboard": "仪表盘",
+        "theme": "主题",
+        "dark": "深色",
+        "light": "浅色",
+        "language": "语言",
+        "intro": "QuantDirect - 量化研究者分析和交流的平台"
+    },
+    "home": {
+        "welcome": "欢迎"
+    },
+    "view": {
+        "futures": "期货",
+        "stocks": "股票",
+        "DCE": "大连商品交易所 (DCE)",
+        "CZCE": "郑州商品交易所 (CZCE)",
+        "GFEX": "广州期货交易所 (GFEX)",
+        "SHFE": "上海期货交易所 (SHFE)",
+        "INE": "上海国际能源交易中心 (INE)",
+        "CFFEX": "中国金融期货交易所 (CFFEX)"
+    }
 }

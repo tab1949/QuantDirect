@@ -8,7 +8,7 @@ import lang_ZH_HK from './zh-HK.json';
 import lang_EN_US from './en-US.json';
 
 export const supportedLang = ['en-US', 'zh-CN', 'zh-HK'];
-export const langName = ['English', '简体中文', '繁體中文(香港)'];
+export const langName = ['English', '简体中文', '繁體中文'];
 export enum languages {EN_US, ZH_CN, ZH_HK};
 
 const resources = {

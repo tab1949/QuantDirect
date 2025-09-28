@@ -1,7 +1,7 @@
 'use client';
 
-import HomePage from './page/HomePage';
+import BasicLayout from './page/BasicLayout';
 
 export default function Home() {
-  return HomePage();
+  return BasicLayout();
 }
