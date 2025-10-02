@@ -163,8 +163,21 @@ class RedisClient {
         await this.set(key, jsonString, expireSeconds);
     }
 
+    public async hSetJson(key: string, field: string, value: any): Promise<void> {
+        const jsonString = JSON.stringify(value);
+        await this.hSet(key, field, jsonString);
+    }
+
     public async getJson(key: string): Promise<any> {
         const jsonString = await this.get(key);
+        if (jsonString) {
+            return JSON.parse(jsonString);
+        }
+        return null;
+    }
+
+    public async hGetJson(key: string, field: string): Promise<any> {
+        const jsonString = await this.hGet(key, field);
         if (jsonString) {
             return JSON.parse(jsonString);
         }

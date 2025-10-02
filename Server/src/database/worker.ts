@@ -21,62 +21,67 @@ async function fetchCurrentFuturesList(): Promise<void> {
     const backup_dir: string = workerConfig.upstream.backup_dir;
     const currentDate = new Date().toISOString().slice(0,10).replace(/-/g, '');
     let listDate = currentDate;
-    logger.info("-------Tradable Lists Update--------");
+    logger.info("------- Tradable Lists Update --------");
     try {
         fs.readdirSync(backup_dir);
     }
     catch (e) {
         logger.warn(`Directory ${backup_dir} is not existed, attempt to create...`);
-        fs.mkdirSync(backup_dir);
-        logger.info(`Created ${backup_dir}, backup files will be placed here.`);
+        fs.mkdirSync(`${backup_dir}`);
+        logger.info(`Created directory ${backup_dir}, backup files will be placed here.`);
+        fs.mkdirSync(`${backup_dir}/lists`);
+        logger.info(`Created directory ${backup_dir}/lists.`);
         logger.info("Attempt to fetch history data...");
         await redisService.flush();
-        listDate = "";
+        listDate = ""; // Fetch full lists
     }
     for (const exchange of exchanges) {
         try {
+            if (await redisService.getContractsList(exchange) == null) { // List not updated but not existed in redis
+                listDate = "";
+                logger.warn(`${exchange}: List not found in Redis.`);
+            }
             requestData.body.params.exchange = exchange;
             requestData.body.params.list_date = listDate;
 
             let resp = await fetchFromUpstream(requestData);
             let data = resp.data.data;
-            
+
             if (resp.data.code !== 0) {
                 logger.error(`${exchange}: API error - ${data.msg}`);
                 continue;
             } 
-            if (data.items.length > 0) { // List updated
+            if (data.items.length == 0) { // Already up-to-date
+                continue;
+            } 
+
+            if (listDate != "") {
                 let tradeCodes = new Array<string>;
-                if (data.items.length <= 50) {
-                    for (let item of data.items) {
-                        tradeCodes.push(item[1]);
-                    }
-                    logger.info(`New contract(s): ${tradeCodes}`);
-                }
-                else {
-                    logger.info(`${data.items.length} ${exchange} contracts fetched (more than 50 contracts).`)
-                }
+                for (let item of data.items) tradeCodes.push(item[1]);
+                logger.info(`New contract(s): ${tradeCodes}`);
                 // Fetch all contracts
                 requestData.body.params.list_date = "";
                 resp = await fetchFromUpstream(requestData);
                 data = resp.data.data;
-                // Save to local file for backup
-                const fileName = `${backup_dir}/list_${exchange}_${currentDate}.json`;
-                fs.writeFile(fileName, JSON.stringify(data), (err) => {
-                    if (err) logger.error(`Error writing ${fileName}`, err);
-                });
-                // Save to Redis
-                await redisService.setFuturesList(data, exchange, listDate);
-                logger.info(`${exchange}: updated ${data.items.length} items to Redis and ${fileName}.`);
-            } 
+            }
+            // Save to local file for backup
+            const fileName = `${backup_dir}/lists/${exchange}_contracts_${currentDate}.json`;
+            fs.writeFile(fileName, JSON.stringify(data), (err) => {
+                if (err) logger.error(`Error writing ${fileName}`, err);
+            });
+            // Save to Redis
+            await redisService.updateFuturesList(data, exchange, currentDate);
+            logger.info(`${exchange}: updated ${data.items.length} items to Redis and ${fileName}.`);
+
         } catch (error) {
             logger.error(`Error fetching futures list for ${exchange}:`, error);
             throw error;
         }
     }
-    logger.info("-------Tradable Lists Update--------");
+    logger.info("------- Tradable Lists Update Finished --------");
 }
 
+// Handler
 parentPort?.on("message", async (msg) =>  {
     switch(msg) {
     case "start":

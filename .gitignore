@@ -3,6 +3,9 @@
 .git
 Server/data_backup
 
+# redis
+*.rdb
+
 # log
 *.log
 

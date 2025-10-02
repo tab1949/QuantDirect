@@ -1,6 +1,11 @@
 import RedisClient from './redisClient';
 import logger from '../logger';
 
+const keys = {
+    contractList: 'contracts:list',
+    contractInfo: 'contracts:info'
+};
+
 class RedisService {
     private redisClient: RedisClient;
     private config: any;
@@ -21,7 +26,7 @@ class RedisService {
 
     public async getContractsList(exchange: string): Promise<any> {
         try {
-            return this.redisClient.getJson(`${exchange}:contracts`);
+            return this.redisClient.hGetJson(keys.contractList, exchange);
         }
         catch(err) {
             logger.error('Failed to get futures list from Redis:', err);
@@ -31,23 +36,22 @@ class RedisService {
 
     public async getContractInfo(contract: string): Promise<any> {
         try {
-            return this.redisClient.getJson(`contract:${contract}:info`);
+            return this.redisClient.hGetJson(keys.contractInfo, contract);
         }
         catch (err) {
             throw err;
         }
     }
 
-    public async setFuturesList(data: any, exchange: string, date: string): Promise<void> {
+    public async updateFuturesList(data: any, exchange: string, date: string): Promise<void> {
         try {
             let contractList = [];
             for (let item of data.items) {
                 contractList.push(item[1]);
             }
-            await this.redisClient.set(`${exchange}:contracts`, JSON.stringify({contractList}));
-            await this.redisClient.set(`${exchange}:codes:update_date`, date);
+            await this.redisClient.hSetJson(keys.contractList, exchange, {contractList});
             for (let item of data.items) {
-                this.redisClient.set(`contract:${item[1]}:info`, JSON.stringify(item));
+                this.redisClient.hSetJson(keys.contractInfo, `${item[1]}`, item);
             }
         }
         catch(err) {

@@ -1,8 +1,7 @@
 import * as redisService from "./redisFetchService";
 
 export async function getContractsList(exchange: string) {
-  let list = await redisService.getContractsList(exchange);
-  return list.contractList;
+  return redisService.getContractsList(exchange);
 }
 
 export async function getContractBySymbol(symbol: string) {
