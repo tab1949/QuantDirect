@@ -1,0 +1,35 @@
+{
+    "basic": {
+        "explore": "Explore",
+        "analysis": "Analysis",
+        "community": "Community",
+        "help": "Help",
+        "dashboard": "Dashboard",
+        "theme": "Theme",
+        "dark": "Dark",
+        "light": "Light",
+        "language": "Language",
+        "intro": "QuantDirect - A platform for quant researchers to analysis and communicate."
+    },
+    "home": {
+        "welcome": "Welcome"
+    },
+    "explore": {
+        "list": {
+            "overview": "Overview",
+            "futures": "Futures",
+            "stocks": "Stocks",
+            "DCE": "Dalian Commodity Exchange (DCE)",
+            "CZCE": "Zhengzhou Commodity Exchange (CZCE)",
+            "GFEX": "Guangzhou Futures Exchange (GFEX)",
+            "SHFE": "Shanghai Futures Exchange (SHFE)",
+            "INE": "Shanghai International Energy Exchange (INE)",
+            "CFFEX": "China Financial Futures Exchange (CFFEX)",
+            "CN": "Chinese A-Share",
+            "HK": "Hong Kong SAR",
+            "US": "USA"
+        },
+        "now": "Now",
+        "notice": "Notice: Click the options in the sidebar for more detailed information."
+    }
+}

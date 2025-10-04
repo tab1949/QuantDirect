@@ -1,5 +1,5 @@
 import {styled, css } from "styled-components";
-import * as Animation from "../page/Animation";
+import * as Animation from "../Animation";
 
 export const Page = styled.div<{ $darkMode: boolean}>`
   background-color: var(--theme-background-color);
@@ -145,4 +145,38 @@ export const SettingsOption = styled.div<{ $darkMode: boolean}>`
   padding: 5px 10px;
   border: 0;
   border-radius: 6px;
+`;
+
+export const Title1 = styled.div`
+  color: var(--theme-font-color-content);
+  font-size: calc(2vmin + 33px);
+  margin: 5px;
+`;
+
+export const Title2 = styled.div`
+  color: var(--theme-font-color-content);
+  font-size: calc(2vmin + 21px);
+  margin: 3px;
+`;
+
+export const Title3 = styled.div`
+  color: var(--theme-font-color-content);
+  font-size: calc(2vmin + 17px);
+  margin: 3px;
+`;
+
+export const InlineT1 = styled.span`
+  color: var(--theme-font-color-content);
+  font-size: calc(2vmin + 33px);
+  width: auto;
+  margin: 5px;
+`;
+
+export const InlineT2 = styled(InlineT1)`
+  font-size: calc(2vmin + 21px);
+  margin: 3px;
+`;
+
+export const InlineT3 = styled(InlineT2)`
+  font-size: calc(2vmin + 17px);
 `;

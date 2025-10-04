@@ -1,0 +1,35 @@
+{
+    "basic": {
+        "explore": "探索",
+        "analysis": "分析",
+        "community": "社區",
+        "help": "幫助",
+        "dashboard": "儀表盤",
+        "theme": "主題",
+        "dark": "深色",
+        "light": "淺色",
+        "language": "語言",
+        "intro": "QuantDirect - 量化研究者分析和交流的平臺"
+    },
+    "home": {
+        "welcome": "歡迎"
+    },
+    "explore": {
+        "list": {
+            "overview": "總覽",
+            "futures": "期貨",
+            "stocks": "股票",
+            "DCE": "大連商品交易所",
+            "CZCE": "鄭州商品交易所",
+            "GFEX": "廣州期貨交易所",
+            "SHFE": "上海期貨交易所",
+            "INE": "上海國際能源交易中心",
+            "CFFEX": "中國金融期貨交易所",
+            "CN": "中國A股",
+            "HK": "香港",
+            "US": "美國"
+        },
+        "now": "現在",
+        "notice": "提示：點擊側邊欄之選項以查看更多詳細訊息"
+    }
+}

@@ -1,9 +1,11 @@
+'use client';
+
 import { useState, useCallback } from "react";
 import { useTranslation } from "react-i18next"; 
 import SettingsIcon from "./SVGIcons";
-import ExplorePage from "./ExplorePage";
-import HomePage from "./HomePage";
-import { langName, supportedLang, languages } from "../locales/client-i18n";
+import ExplorePage from "./Explore/Page";
+import HomePage from "./Home/Page";
+import { langName, supportedLang, languages } from "./locales/client-i18n";
 import {
   Page, 
   CommonHeader, 
@@ -14,7 +16,7 @@ import {
   CommonBody, 
   CommonFooter,
   SettingsMenuL2
-} from "../components/BasicLayout";
+} from "./components/BasicLayout";
 
 export default function BasicLayout() {
   const { t, i18n } = useTranslation();
@@ -26,9 +28,20 @@ export default function BasicLayout() {
     home: true, explore: false, analysis: false, community: false, help: false, dashboard: false, settings: false
   });
 
-  const changeLanguage = (lang: string) => {
-    i18n.changeLanguage(lang);
-  };
+  type Selected = typeof selected;
+
+  const switchPage = useCallback((nav: keyof Selected) => {
+    setSelected(prev => ({ 
+      ...prev, 
+      home: false,
+      help: nav === 'help',
+      community: nav === 'community',
+      analysis: nav === 'analysis',
+      explore: nav === 'explore',
+      dashboard: nav === 'dashboard'
+    }));
+  }, []);
+
   const openHome = useCallback(() => {
     setSelected(prev => ({ 
       ...prev, 
@@ -40,62 +53,7 @@ export default function BasicLayout() {
       help: false
     }));
   }, []);
-  const openExplore = useCallback(() => {
-    setSelected(prev => ({ 
-      ...prev, 
-      explore: prev.explore? prev.explore: !prev.explore,
-      home: false,
-      analysis: false,
-      community: false,
-      dashboard: false,
-      help: false
-    }));
-  }, []);
-  const openAnalysis = useCallback(() => {
-    setSelected(prev => ({ 
-      ...prev, 
-      analysis: prev.analysis? prev.analysis: !prev.analysis,
-      home: false,
-      explore: false,
-      community: false,
-      help: false,
-      dashboard: false
-    }));
-  }, []);
-  
-  const openCommunity = useCallback(() => {
-    setSelected(prev => ({ 
-      ...prev, 
-      community: prev.community? prev.community: !prev.community,
-      home: false,
-      explore: false,
-      analysis: false,
-      help: false,
-      dashboard: false
-    }));
-  }, []);
-  const openHelp = useCallback(() => {
-    setSelected(prev => ({ 
-      ...prev, 
-      help: prev.help? prev.help: !prev.help,
-      home: false,
-      explore: false,
-      analysis: false,
-      community: false,
-      dashboard: false
-    }));
-  }, []);
-  const openDashboard = useCallback(() => {
-    setSelected(prev => ({ 
-      ...prev, 
-      dashboard: prev.dashboard? prev.dashboard: !prev.dashboard,
-      home: false,
-      explore: false,
-      analysis: false,
-      community: false,
-      help: false
-    }));
-  }, []);
+
   const openSettingsMenu = useCallback(() => {
     setSelected(prev => ({ ...prev, settings: !prev.settings }));
     if (settingsL1Opened) {
@@ -105,11 +63,51 @@ export default function BasicLayout() {
       setSettingsL1Opened(true); 
     }
   }, [settingsL1Opened]);
-  const openLanguageSettingsMenu = useCallback(() => {
+
+  const openLanguageMenu = useCallback(() => {
     setSettingsL2Type("lang");
     setSettingsL2Opened(s => !s);
   }, []);
+
+  const changeLanguage = (lang: string) => {
+    i18n.changeLanguage(lang);
+  };
   
+  const toggleDarkMode = useCallback(() => {
+    setDarkMode(prev => !prev);
+  }, []);
+  
+  const SettingsMenuL1Content = (
+    <SettingsMenuL1 $darkMode={darkMode}>
+      <SettingsOption $darkMode={darkMode} onClick={toggleDarkMode}>
+        <span>{t('basic.theme')}</span>
+        <span>({darkMode ? t('basic.dark') : t('basic.light')})</span>
+      </SettingsOption>
+      <SettingsOption $darkMode={darkMode} onClick={openLanguageMenu}>
+        <span>{t('basic.language')}</span>
+        <span>({i18n.language === 'en-US' ? langName[languages.EN_US] : 
+                i18n.language === 'zh-CN' ? langName[languages.ZH_CN] : langName[languages.ZH_HK]})</span>
+      </SettingsOption>
+    </SettingsMenuL1>
+  );
+
+  const SettingsMenuL2Content = settingsL2Type === 'lang' && (
+    <SettingsMenuL2 $darkMode={darkMode}>
+      {supportedLang.map((v, i) => (
+        <SettingsOption 
+          key={`lang-opt-${i}`} 
+          $darkMode={darkMode} 
+          onClick={() => { 
+            changeLanguage(v); 
+            setSettingsL2Opened(false); 
+          }}
+        >
+          {langName[i]}
+        </SettingsOption>
+      ))}
+    </SettingsMenuL2>
+  );
+
   return (
     <body>
       <Page $darkMode={darkMode}>
@@ -124,24 +122,24 @@ export default function BasicLayout() {
 
           <HeaderSeparator $darkMode={darkMode}/>
 
-          <HeaderElement $selected={selected.explore} onClick={openExplore}>
+          <HeaderElement $selected={selected.explore} onClick={() => switchPage('explore')}>
             {t('basic.explore')}
           </HeaderElement>
 
-          <HeaderElement $selected={selected.analysis} onClick={openAnalysis}>
+          <HeaderElement $selected={selected.analysis} onClick={() => switchPage('analysis')}>
             {t('basic.analysis')}
           </HeaderElement>
 
-          <HeaderElement $selected={selected.community} onClick={openCommunity}>
+          <HeaderElement $selected={selected.community} onClick={() => switchPage('community')}>
             {t('basic.community')}
           </HeaderElement>
 
-          <HeaderElement $selected={selected.help} onClick={openHelp}>
+          <HeaderElement $selected={selected.help} onClick={() => switchPage('help')}>
             {t('basic.help')}
           </HeaderElement> 
 
           <div style={{marginLeft: 'auto', display: 'flex', alignItems: 'center'}}>
-            <HeaderElement $selected={selected.dashboard} onClick={openDashboard} style={{fontSize: '17px'}}>
+            <HeaderElement $selected={selected.dashboard} onClick={() => switchPage('dashboard')} style={{fontSize: '17px'}}>
               {t('basic.dashboard')}
             </HeaderElement>
 
@@ -161,28 +159,12 @@ export default function BasicLayout() {
           {selected.explore && <ExplorePage $darkMode={darkMode}/>}
         </CommonBody>
         
-        {settingsL1Opened && (
-        <SettingsMenuL1 $darkMode={darkMode}>
-          <SettingsOption $darkMode={darkMode} onClick={()=>{setDarkMode(!darkMode)}}>
-            <span>{t('basic.theme')}</span>
-            <span>({darkMode? t('basic.dark'): t('basic.light')})</span>
-          </SettingsOption>
+        {settingsL1Opened && SettingsMenuL1Content}
+        {settingsL2Opened && SettingsMenuL2Content}
 
-          <SettingsOption $darkMode={darkMode} onClick={openLanguageSettingsMenu}>
-            <span>{t('basic.language')}</span>
-            <span>({i18n.language === 'en-US' ? langName[languages.EN_US] : 
-                    i18n.language === 'zh-CN' ? langName[languages.ZH_CN] : langName[languages.ZH_HK]})</span>
-          </SettingsOption>
-        </SettingsMenuL1>)}
-        {settingsL2Opened && (<SettingsMenuL2 $darkMode={darkMode}>
-          {settingsL2Type == 'lang' && (
-            supportedLang.map((v, i) => {
-              return <SettingsOption key={`lang-opt-${i}`} $darkMode={darkMode} onClick={() => {changeLanguage(v); setSettingsL2Opened(false);}}>{langName[i]}</SettingsOption>;
-            })
-          )}
-        </SettingsMenuL2>)}
-
-        <CommonFooter $darkMode={darkMode}>{t('basic.intro')}</CommonFooter>
+        <CommonFooter $darkMode={darkMode}>
+          {t('basic.intro')}
+        </CommonFooter>
       </Page> 
     </body>
   );
