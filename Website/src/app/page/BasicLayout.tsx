@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 import { useTranslation } from "react-i18next"; 
 import SettingsIcon from "./SVGIcons";
-import ExplorePage from "./Explore/Page";
+import ExplorePage from "./Explore/ExplorerPage";
 import HomePage from "./Home/Page";
 import { langName, supportedLang, languages } from "./locales/client-i18n";
 import {

@@ -5,7 +5,11 @@ import { InlineT1, InlineT2, InlineT3 } from "../components/BasicLayout";
 import { useTranslation } from "react-i18next";
 import CandleStickChart from "../components/CandleStickChart";
 
-function Title() {
+interface TimeDisplayProps {
+    $title: string
+}
+
+export default function TimeDisplay(props: TimeDisplayProps) {
     const { t } = useTranslation('explore');
     const [currentTime, setCurrentTime] = useState('');
     const [currentDate, setCurrentDate] = useState('');
@@ -15,18 +19,13 @@ function Title() {
         setCurrentTime(now.toISOString().slice(11, 19));
         setCurrentDate(now.toISOString().slice(0, 10));
     }, 1000));
-    return <div style={{display: 'flex', alignItems: 'center'}}>
-        <InlineT2>{t('list.overview')}</InlineT2>
-        <InlineT3 style={{fontSize: '20px', marginLeft: 'auto'}}>{t('now')}{` ${currentDate}`}{' (UTC+8) '}</InlineT3>
+    return <div 
+        style={{
+            display: 'flex', 
+            alignItems: 'center',
+        }}>
+        <InlineT2>{props.$title}</InlineT2>
+        <InlineT3 style={{fontSize: 'calc(1vmin + 11px)', marginLeft: 'auto'}}>{t('now')}{` ${currentDate}`}{' (UTC+8) '}</InlineT3>
         <InlineT2>{currentTime}</InlineT2>
-    </div>;
-}
-
-export default function Overview() {
-    const { t } = useTranslation('explore');
-    
-    return <div>
-        <Title/>
-        <InlineT3>{t('notice')}</InlineT3>
     </div>;
 }
