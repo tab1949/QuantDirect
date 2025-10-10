@@ -30,6 +30,9 @@
             "US": "USA"
         },
         "now": "Now",
-        "notice": "Notice: Click the options in the sidebar for more detailed information."
+        "notice": "Notice: Click the options in the sidebar for more detailed information.",
+        "loading": "Loading...",
+        "no_data": "No data available",
+        "fetch_failed": "Failed to fetch data"
     }
 }

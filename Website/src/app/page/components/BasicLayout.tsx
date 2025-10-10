@@ -23,6 +23,7 @@ export const Page = styled.div<{ $darkMode: boolean}>`
   --theme-icon-color: ${props => props.$darkMode? '#b8c2d0' : '#6b7280'};
   --theme-accent-color: ${props => props.$darkMode? '#5a6470' : '#9ca3af'};
   --theme-border-color: ${props => props.$darkMode? '#3a4149' : '#d1d5db'};
+  --theme-separator-color: ${props => props.$darkMode ? 'rgba(184, 194, 208, 0.3)' : 'rgba(107, 114, 128, 0.4)'};
 `;
 
 export const CommonHeader = styled.div<{ $darkMode: boolean}>`
@@ -62,12 +63,12 @@ export const HeaderElement = styled.div<{$selected: boolean}>`
   
 `;
 
-export function HeaderSeparator({ $darkMode }: { $darkMode: boolean }) {
+export function HeaderSeparator() {
   return <div style={{
     position: 'relative',
     height: '90%',
     width: '2px',
-    backgroundColor: $darkMode ? 'rgba(184, 194, 208, 0.3)' : 'rgba(107, 114, 128, 0.4)',
+    backgroundColor: 'var(--theme-separator-color)',
     alignSelf: 'center',
     borderRadius: '1px',
     marginLeft: '5px',
@@ -179,4 +180,60 @@ export const InlineT2 = styled(InlineT1)`
 
 export const InlineT3 = styled(InlineT2)`
   font-size: calc(2vmin + 17px);
+`;
+
+export const ScrollList = styled.div`
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background-color: transparent;
+  margin: 0px;
+  border-width: 3px;
+  border-radius: 5px;
+  border-color: var(--theme-border-color);
+  overflow-y: scroll;
+  display: flex;
+  flex-direction: column;
+
+  &::-webkit-scrollbar {
+    width: 10px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 0px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background-color: var(--theme-accent-color);
+    border-radius: 5px;
+  }
+  
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: var(--theme-font-color);
+  }
+
+`;
+
+export const ListItem = styled.div`
+  --normal-color: var(--theme-font-color);
+  --hover-color: var(--theme-font-color-content);
+  --normal-bg-color: transparent;
+  --hover-bg-color: #00000025;
+  ${Animation.hover_color_change}
+  position: relative;
+  width: 100%;
+  height: auto;
+  display: flex;
+  align-items: center;
+  justify-content: start;
+`;
+
+export const HorizontalLine = styled.div<{$width: string, $length: string, $align: string}>`
+  position: relative;
+  background-color: var(--theme-separator-color);
+  height: ${props=>props.$width};
+  width: ${props=>props.$length};
+  align-self: ${props=>props.$align};
+  margin: 2px;
 `;
