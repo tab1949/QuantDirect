@@ -4,7 +4,7 @@
   "private": true,
   "main": "dist/index.js",
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only -r dotenv/config src/index.ts",
+    "dev": "ts-node-dev --respawn --transpile-only --clear --poll --interval 1000 -r dotenv/config src/index.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
     "lint": "eslint . --ext .ts",

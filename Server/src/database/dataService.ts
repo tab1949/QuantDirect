@@ -20,10 +20,11 @@ public async run(): Promise<void> {
         this.redisService = new RedisService(this.config.redis);
         try {
             await this.redisService.init();
-            logger.info("Redis service initialized in main process");
+            logger.info("Redis service initialized successfully in main process");
         }
         catch (e) {
             logger.error(`Redis service initialization failed, error: ${e}`);
+            throw new Error(`Failed to initialize Redis service: ${e}`);
         }
 
 

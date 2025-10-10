@@ -16,7 +16,18 @@ class RedisService {
     }
 
     public async init(): Promise<void> {
-        await this.redisClient.connect();
+        try {
+            await this.redisClient.connect();
+            
+            const isConnected = this.redisClient.isConnected();
+            if (!isConnected) 
+                throw new Error('Redis connection verification failed');
+            
+            logger.info('Redis service initialized and verified successfully');
+        } catch (error) {
+            logger.error('Redis service initialization failed:', error);
+            throw error;
+        }
     }
 
     public async stop(): Promise<void> {

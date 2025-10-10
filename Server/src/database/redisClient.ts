@@ -20,7 +20,8 @@ class RedisClient {
                             logger.error('Redis connection failed after 10 retries');
                             return false;
                         }
-                        return Math.min(retries * 50, 1000);
+                        logger.info(`Redis reconnecting (attempt ${retries})`);
+                        return 1000;
                     }
                 },
                 password: this.config.password || undefined,
@@ -28,15 +29,15 @@ class RedisClient {
             });
 
             this.client.on('error', (err) => {
-                logger.error('Redis Client Error:', err);
+                // logger.error('Redis Client Error:', err);
             });
 
             this.client.on('connect', () => {
-                
+                logger.info('Redis client connected');
             });
 
             this.client.on('ready', () => {
-                
+                logger.info('Redis client ready');
             });
 
             this.client.on('end', () => {
@@ -45,7 +46,7 @@ class RedisClient {
 
             await this.client.connect();
         } catch (error) {
-            logger.error('Failed to connect to Redis:', error);
+            // logger.error('Failed to connect to Redis:', error);
             throw error;
         }
     }

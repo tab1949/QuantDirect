@@ -16,8 +16,18 @@ const API_BASE = process.env.API_BASE || '/api';
 app.use(cors());
 app.use(express.json());
 
-app.get('/health', (req: Request, res: Response) => {
-  res.json({ status: 'ok', ts: new Date().toISOString() });
+app.get('/health', async (req: Request, res: Response) => {
+  try {
+    const healthStatus = await data.query();
+    res.json(healthStatus);
+  } catch (error) {
+    logger.error('Health check failed:', error);
+    res.status(503).json({ 
+      status: 'error', 
+      message: 'Service unavailable - Redis connection failed',
+      ts: new Date().toISOString() 
+    });
+  }
 });
 
 // simple echo endpoint kept for convenience
@@ -29,16 +39,28 @@ app.get(`${API_BASE}/echo`, (req: Request, res: Response) => {
 // Mount consolidated API router (routes/index.ts handles subpaths)
 app.use(API_BASE, apiRouter);
 
-app.listen(port, async () => {
-  logger.info(`Server listening on port ${port} (API base: ${API_BASE})`);
-  
+
+async function startServer() {
   try {
+    logger.info('Starting server initialization...');
+    
+    logger.info('Initializing data service and Redis connection...');
     await data.run();
+    logger.info('Data service and Redis initialized successfully');
+    
+    app.listen(port, () => {
+      logger.info(`Server listening on port ${port} (API base: ${API_BASE})`);
+      logger.info('Server startup completed successfully');
+    });
+    
   } catch (error) {
-    logger.error('Failed to start data service:', error);
+    logger.error('Failed to start server:', error);
+    logger.error('Redis connection failed, exiting program...');
     process.exit(1);
   }
-});
+}
+
+startServer();
 
 
 process.on('SIGINT', async () => {
