@@ -5,16 +5,23 @@ import styled from "styled-components";
 import TimeDisplay from "./TimeDisplay";
 import * as FetchData from "./FetchData";
 import { HorizontalLine, InlineT3, ScrollList, ListItem } from "../components/BasicLayout";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 interface ViewAreaProps {
     $content: string
 }
 
-const ContractListItem = styled(ListItem)`
-    font-size: 23px;
+const SubjectListItem = styled(ListItem)`
+    font-size: 19px;
     padding: 5px;
 `;
+
+const ContractListItem = styled(ListItem)`
+    font-size: 27px;
+    height: 70px;
+    padding: 3px;
+`;
+
 
 interface FuturesContentProps {
     exchange: string;
@@ -22,22 +29,36 @@ interface FuturesContentProps {
 
 function FuturesContent({ exchange }: FuturesContentProps) {
     const { t } = useTranslation('explore');
-    const [assets, setAssets] = useState<string[]>([]);
+    const [assets, setAssets] = useState<{name: string, code: string}[]>([]);
+    const [selectedAsset, setSelectedAsset] = useState<string>('AG');
+    const [contracts, setContracts] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const allContracts = useRef<string[]>([]);
 
     useEffect(() => {(async () => {
         try {
             setLoading(true);
             setError(null);
-            setAssets((await FetchData.GetSubjectAssets(exchange)).name || []);
+            setAssets((await FetchData.GetSubjectAssets(exchange)) || []);
+            allContracts.current = (await FetchData.GetContractsList(exchange)) || [];
         } catch (err) {
             setError(`${t('fetch_failed')}: ${err}`);
             setAssets([]);
         } finally {
             setLoading(false);
         }
-    })(); }, [exchange]);
+    })(); }, [exchange, t]);
+
+    useEffect(() => {
+        const c: string[] = [];
+        for (const i of allContracts.current) {
+            if (i.includes(selectedAsset)) {
+                c.push(i);
+            }
+        }
+        setContracts(c);
+    }, [selectedAsset]);
 
     return (
         <div style={{
@@ -48,7 +69,7 @@ function FuturesContent({ exchange }: FuturesContentProps) {
             padding: "10px"
         }}>
             <div style={{
-                width: "15%",
+                width: "12%",
                 minWidth: "100px",
                 height: "100%",
                 borderRadius: "8px",
@@ -56,16 +77,16 @@ function FuturesContent({ exchange }: FuturesContentProps) {
             }}>
                 <ScrollList>
                     {loading ? (
-                        <ContractListItem>{t('loading')}</ContractListItem>
+                        <SubjectListItem>{t('loading')}</SubjectListItem>
                     ) : error ? (
-                        <ContractListItem style={{ color: 'red' }}>{error}</ContractListItem>
+                        <SubjectListItem style={{ color: 'red' }}>{error}</SubjectListItem>
                     ) : assets.length === 0 ? (
-                        <ContractListItem>{t('no_data')}</ContractListItem>
+                        <SubjectListItem>{t('no_data')}</SubjectListItem>
                     ) : (
                         assets.map((asset, index) => (
-                            <ContractListItem key={`${asset}-${index}`}>
-                                {asset}
-                            </ContractListItem>
+                            <SubjectListItem key={`${asset}-${index}`} onClick={()=>{setSelectedAsset(asset.code);}}>
+                                {asset.name}
+                            </SubjectListItem>
                         ))
                     )}
                 </ScrollList>
@@ -78,6 +99,11 @@ function FuturesContent({ exchange }: FuturesContentProps) {
                 borderRadius: "8px",
                 backgroundColor: "transparent"
             }}>
+                <ScrollList>
+                    {contracts.map((contract, index) => (
+                        <ContractListItem key={`${contract}-${index}`}>{contract}</ContractListItem>
+                    ))}
+                </ScrollList>
             </div>
         </div>
     );

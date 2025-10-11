@@ -1,14 +1,8 @@
 import axios from 'axios';
 
-// 定义响应数据类型
-interface SubjectAssetsResp {
-    code: [],
-    name: []
-}
-
-export async function GetSubjectAssets(exchange: string): Promise<SubjectAssetsResp> {
-    const response = await axios.get<SubjectAssetsResp>(
-        `http://localhost:888/api/futures/contract/list/${exchange}`,
+export async function GetSubjectAssets(exchange: string): Promise<{name: string, code: string}[]> {
+    const response = await axios.get<{name: string, code: string}[]>(
+        `http://localhost:888/api/futures/contract/assets/${exchange}`,
         {
             headers: {
                 'Content-Type': 'application/json',
@@ -19,8 +13,17 @@ export async function GetSubjectAssets(exchange: string): Promise<SubjectAssetsR
     return response.data;
 }
 
-export function GetContractsList() {
-
+export async function GetContractsList(exchange: string): Promise<string[]> {
+    const response = await axios.get<string[]>(
+        `http://localhost:888/api/futures/contract/list/${exchange}`,
+        {
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            timeout: 2000,
+        }
+    );
+    return response.data;
 }
 
 export function GetContractInfo() {
