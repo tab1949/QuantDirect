@@ -4,15 +4,10 @@
   "private": true,
   "main": "dist/index.js",
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only --clear --poll --interval 1000 -r dotenv/config src/index.ts",
+    "dev": "ts-node-dev --respawn --transpile-only --poll --interval 1000 -r dotenv/config src/index.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
-    "lint": "eslint . --ext .ts",
-    "test-redis": "node test-redis.js",
-    "redis:start": "docker-compose up -d redis",
-    "redis:stop": "docker-compose down",
-    "redis:logs": "docker-compose logs redis",
-    "redis:status": "docker-compose ps redis"
+    "lint": "eslint . --ext .ts"
   },
   "dependencies": {
     "@types/axios": "^0.9.36",

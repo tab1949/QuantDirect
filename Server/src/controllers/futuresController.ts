@@ -12,3 +12,9 @@ export async function getInfoBySymbol(req: Request, res: Response) {
   const item = await futuresService.getContractBySymbol(symbol.toUpperCase());
   res.json(item);
 }
+
+export async function getAssets(req: Request, res: Response) {
+  const { exchange } = req.params;
+  const data = await futuresService.getAssets(exchange);
+  res.json(data);
+}

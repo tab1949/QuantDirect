@@ -4,5 +4,10 @@
  - 
 ## About Redis
 ### Redis Keys
-- "contracts:info" Hash; Fields: Contract Code; Contract information; 
-- "contracts:list" Hash; Fields: Exchange Code; Contract list of each exchange;
+Database 1 (futures):
+| Key | Type | Description | Field |
+| --- | ---- | ----------- | ----- |
+|"contracts:info"|Hash|Contract information|Contract Code|
+|"contracts:list"|Hash|Contract list of each exchange|Exchange Code|
+|"contracts:assets:<EXCHANGE>"|Set|Names of Subject Assets||
+|"contracts:asset:code"|Hash|Codes of Subject Assets|Asset Name|

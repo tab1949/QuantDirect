@@ -18,7 +18,7 @@ app.use(express.json());
 
 app.get('/health', async (req: Request, res: Response) => {
   try {
-    const healthStatus = await data.query();
+    const healthStatus = await data.healthCheck();
     res.json(healthStatus);
   } catch (error) {
     logger.error('Health check failed:', error);
@@ -40,27 +40,21 @@ app.get(`${API_BASE}/echo`, (req: Request, res: Response) => {
 app.use(API_BASE, apiRouter);
 
 
-async function startServer() {
-  try {
-    logger.info('Starting server initialization...');
-    
-    logger.info('Initializing data service and Redis connection...');
-    await data.run();
-    logger.info('Data service and Redis initialized successfully');
-    
-    app.listen(port, () => {
-      logger.info(`Server listening on port ${port} (API base: ${API_BASE})`);
-      logger.info('Server startup completed successfully');
-    });
-    
-  } catch (error) {
-    logger.error('Failed to start server:', error);
-    logger.error('Redis connection failed, exiting program...');
-    process.exit(1);
-  }
-}
+logger.info('Starting server initialization...');
 
-startServer();
+logger.info('Initializing data service and Redis connection...');
+data.run()
+.then(() => {
+  logger.info('Data service and Redis initialized successfully');
+})
+.catch((e) => {
+  logger.info(`Start data service failed: ${e}`);
+});
+
+app.listen(port, () => {
+  logger.info(`Server listening on port ${port} (API base: ${API_BASE})`);
+  logger.info('Server startup completed successfully');
+});
 
 
 process.on('SIGINT', async () => {

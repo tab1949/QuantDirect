@@ -7,3 +7,7 @@ export async function getContractsList(exchange: string) {
 export async function getContractBySymbol(symbol: string) {
   return redisService.getContractInfo(symbol);
 }
+
+export async function getAssets(exchange: string) {
+  return redisService.getSubjectAssets(exchange);
+}

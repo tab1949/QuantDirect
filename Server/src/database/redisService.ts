@@ -3,7 +3,9 @@ import logger from '../logger';
 
 const keys = {
     contractList: 'contracts:list',
-    contractInfo: 'contracts:info'
+    contractInfo: 'contracts:info',
+    contractAssets: 'contracts:assets',
+    contractAssetCodes: 'contracts:asset:code'
 };
 
 class RedisService {
@@ -35,9 +37,12 @@ class RedisService {
         logger.info('Redis service shutdown');
     }
 
-    public async getContractsList(exchange: string): Promise<any> {
+    public async getContractList(exchange: string): Promise<Array<string>> {
         try {
-            return this.redisClient.hGetJson(keys.contractList, exchange);
+            const list = (await this.redisClient.hGetJson(keys.contractList, exchange)) as {contracts: Array<string>};
+            if (!list || !list.contracts)
+                return [];
+            return list.contracts;
         }
         catch(err) {
             logger.error('Failed to get futures list from Redis:', err);
@@ -54,19 +59,51 @@ class RedisService {
         }
     }
 
-    public async updateFuturesList(data: any, exchange: string, date: string): Promise<void> {
+    public async getSubjectAssets(exchange: string): Promise<any> {
         try {
-            let contractList = [];
+            const name = await this.redisClient.sMembers(keys.contractAssets + ":" + exchange);
+            return name;
+        }
+        catch (err) {
+            throw err;
+        }
+    }
+    
+    public async initFuturesContractInfo(data: any, exchange: string): Promise<void> {
+        try {
+            let list: Array<string> = [];
             for (let item of data.items) {
-                contractList.push(item[1]);
+                this.redisClient.hSetJson(keys.contractInfo, item[0] as string, item);
+                list.push(item[1] as string);
+                let assetName = (item[3] as string).replace(/TAS$/, '').replace(/连续$/, '').replace(/主力$/, '').replace(/\d+$/, '');
+                this.redisClient.sAdd(keys.contractAssets + ":" + exchange, assetName);
+                this.redisClient.hSet(keys.contractAssetCodes, assetName, item[4] as string);
             }
-            await this.redisClient.hSetJson(keys.contractList, exchange, {contractList});
-            for (let item of data.items) {
-                this.redisClient.hSetJson(keys.contractInfo, `${item[1]}`, item);
-            }
+            this.redisClient.hSetJson(keys.contractList, exchange, {"contracts": list});
         }
         catch(err) {
-            logger.error('Failed to update futures list in Redis:', err);
+            logger.error('Failed to initialize futures contract info in Redis:', err);
+            throw err;
+        }
+    }
+
+    public async updateFuturesContractInfo(data: any, exchange: string): Promise<void> {
+        try {
+            let list = await this.redisClient.hGetJson(keys.contractList, exchange);
+            let names: Array<string> = await this.redisClient.sMembers(keys.contractAssets + ":" + exchange);
+            for (let item of data.items) {
+                this.redisClient.hSetJson(keys.contractInfo, item[0] as string, item);
+                list.contracts.push(item[1] as string);
+                const assetName = (item[3] as string).replace(/TAS$/, '').replace(/连续$/, '').replace(/主力$/, '').replace(/\d+$/, '');
+                if (!names.includes(assetName)) {
+                    this.redisClient.sAdd(keys.contractAssets + ":" + exchange, assetName);
+                    this.redisClient.hSet(keys.contractAssetCodes, assetName, item[4] as string);
+                }
+            }
+            this.redisClient.hSetJson(keys.contractList, exchange, list);
+        }
+        catch(err) {
+            logger.error('Failed to update futures contract info in Redis:', err);
             throw err;
         }
     }

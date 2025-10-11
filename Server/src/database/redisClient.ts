@@ -127,6 +127,30 @@ class RedisClient {
         return await this.client.hDel(key, field);
     }
 
+    public async sAdd(key: string, ...values: string[]): Promise<number> {
+        if (!this.client) {
+            throw new Error('Redis client not connected');
+        }
+        
+        return await this.client.sAdd(key, values);
+    }
+
+    public async sMembers(key: string): Promise<string[]> {
+        if (!this.client) {
+            throw new Error('Redis client not connected');
+        }
+        
+        return await this.client.sMembers(key);
+    }
+
+    public async sIsMember(key: string, member: string): Promise<boolean> {
+        if (!this.client) {
+            throw new Error('Redis client not connected');
+        }
+        
+        return await this.client.sIsMember(key, member);
+    }
+    
     public async lPush(key: string, ...values: string[]): Promise<number> {
         if (!this.client) {
             throw new Error('Redis client not connected');

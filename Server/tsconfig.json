@@ -12,16 +12,8 @@
     "moduleResolution": "node",
     "sourceMap": true,
     "incremental": true,
-    "tsBuildInfoFile": ".tsbuildinfo",
-    "isolatedModules": true
+    "tsBuildInfoFile": ".tsbuildinfo"
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"],
-  "ts-node": {
-    "transpileOnly": true,
-    "files": true,
-    "compilerOptions": {
-      "module": "commonjs"
-    }
-  }
+  "exclude": ["node_modules", "dist"]
 }
