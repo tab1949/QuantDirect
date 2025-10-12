@@ -1,3 +1,4 @@
+import dotenv from 'dotenv';
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import apiRouter from './routes/index';
@@ -6,10 +7,12 @@ import dataService from './database/dataService';
 import setDataSource from './services/redisFetchService';
 import config from './config.json';
 
+dotenv.config();
+
 const app = express();
 const data = dataService(config);
 setDataSource(data);
-const port = process.env.PORT ? parseInt(process.env.PORT) : 4000;
+const port = process.env.API_PORT ? parseInt(process.env.API_PORT) : 4000;
 // Allow overriding API base path via env
 const API_BASE = process.env.API_BASE || '/api';
 
