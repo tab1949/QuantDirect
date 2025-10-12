@@ -27,8 +27,22 @@ export class DataService {
                 throw new Error(`Failed to initialize Redis service: ${e}`);
             }
 
-
-            this.worker = new Worker(path.join(__dirname, 'worker.ts'), {workerData: { upstream: this.config.upstream, redis: this.config.redis }});
+            // Determine worker file path based on environment
+            // In dev mode with tsx, use worker.ts; in production, use compiled worker.js
+            const isDev = __filename.endsWith('.ts');
+            const workerFile = isDev ? 'worker.ts' : 'worker.js';
+            const workerPath = path.join(__dirname, workerFile);
+            
+            // In development, tsx needs to be registered for worker threads
+            // Use tsx/cjs to enable TypeScript support in worker threads
+            const execArgv = isDev ? [
+                '--require', 'tsx/cjs'
+            ] : [];
+            
+            this.worker = new Worker(workerPath, {
+                workerData: { upstream: this.config.upstream, redis: this.config.redis },
+                execArgv
+            });
             this.worker.on('message', (msg) => {
                 logger.info(msg);
             });

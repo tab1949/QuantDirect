@@ -44,6 +44,7 @@ export async function updateFuturesContractList(redis: RedisService, config: any
                     return;
                 } 
                 if (data.items.length == 0) { // Already up-to-date
+                    logger.log(`${exchange}: already up-to-date`);
                     return;
                 } 
 
