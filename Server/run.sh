@@ -1,4 +1,5 @@
 # Start Redis Server
+clear
 eval $(redis-server redis.conf) > /dev/null &
 
 echo "Redis started."

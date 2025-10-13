@@ -61,3 +61,16 @@ export function UpdateFuturesContractList(dir: string, exchange: string, data: A
         });
     });
 }
+
+export function SetUpdateTime(dir: string, date: string): void {
+    fs.writeFileSync(`${dir}/futures/contracts/update`, date);
+}
+
+export function GetUpdateTime(dir: string): string {
+    if (Exists(`${dir}/futures/contracts/update`)) {
+        return fs.readFileSync(`${dir}/futures/contracts/update`).toString();
+    }
+    else {
+        return '';
+    }
+}

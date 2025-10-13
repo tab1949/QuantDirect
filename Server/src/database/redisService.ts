@@ -5,7 +5,8 @@ const keys = {
     contractList: 'contracts:list',
     contractInfo: 'contracts:info',
     contractAssets: 'contracts:assets',
-    contractAssetCodes: 'contracts:asset:code'
+    contractAssetCodes: 'contracts:asset:code',
+    contractUpdateDate: 'contracts:update'
 };
 
 class RedisService {
@@ -110,6 +111,14 @@ class RedisService {
             logger.error('Failed to update futures contract info in Redis:', err);
             throw err;
         }
+    }
+
+    public async setContractsUpdated(date: string) {
+        this.redisClient.set(keys.contractUpdateDate, date);
+    }
+
+    public async getUpdateTime(): Promise<string|null> {
+        return await this.redisClient.get(keys.contractUpdateDate);
     }
 
     // 缓存API响应
