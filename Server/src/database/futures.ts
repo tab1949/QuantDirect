@@ -84,6 +84,7 @@ export async function updateFuturesContractList(redis: RedisService, config: any
                 continue;
             }
             Backup.CreateFuturesContractList(backup_d, exchange, JSON.stringify(data));
+            Backup.SetUpdateTime(backup_d, currentDate);
             await redis.initFuturesContractInfo(data, exchange);
             logger.info(`Initialized ${exchange} contract list, updated ${data.items.length} items.`);
         } catch (error) {
