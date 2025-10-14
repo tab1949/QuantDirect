@@ -79,7 +79,7 @@ class RedisService {
             let list: Array<string> = [];
             for (let item of data.items) {
                 this.redisClient.hSetJson(keys.contractInfo, item[0] as string, item);
-                list.push(item[1] as string);
+                list.push(item[0] as string);
                 let assetName = (item[3] as string).replace(/TAS$/, '').replace(/连续$/, '').replace(/主力$/, '').replace(/\d+$/, '');
                 this.redisClient.sAdd(keys.contractAssets + ":" + exchange, assetName);
                 this.redisClient.hSet(keys.contractAssetCodes, assetName, item[4] as string);
@@ -98,7 +98,7 @@ class RedisService {
             let names: Array<string> = await this.redisClient.sMembers(keys.contractAssets + ":" + exchange);
             for (let item of data.items) {
                 this.redisClient.hSetJson(keys.contractInfo, item[0] as string, item);
-                list.contracts.push(item[1] as string);
+                list.contracts.push(item[0] as string);
                 const assetName = (item[3] as string).replace(/TAS$/, '').replace(/连续$/, '').replace(/主力$/, '').replace(/\d+$/, '');
                 if (!names.includes(assetName)) {
                     this.redisClient.sAdd(keys.contractAssets + ":" + exchange, assetName);

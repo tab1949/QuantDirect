@@ -43,6 +43,7 @@ export async function updateFuturesContractList(redis: RedisService, config: any
             logger.warn("Redis is empty or out-of-date, but backup files is up-to-date.");
             logger.log("Loading data from backup into Redis...");
             await redis.flush();
+            // TODO: Load from json file
             
             exchanges = []; // Skip data fetching loop
         }
