@@ -148,6 +148,10 @@ export const SettingsOption = styled.div<{ $darkMode: boolean}>`
   border-radius: 6px;
 `;
 
+export const Div = styled.div`
+  color: var(--theme-font-color-content);
+`;
+
 export const Title1 = styled.div`
   color: var(--theme-font-color-content);
   font-size: calc(2vmin + 33px);
