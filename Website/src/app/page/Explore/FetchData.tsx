@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const api_base = 'http://localhost:4000/api';
+const api_base = 'http://localhost:888/api';
 const contractInfo = new Map;
 
 export async function GetSubjectAssets(exchange: string): Promise<{name: string, code: string}[]> {
@@ -47,11 +47,11 @@ export interface ContractInfo {
     trade_time_desc: string
 } 
 
-export async function GetContractInfo(contract: string): Promise<ContractInfo> {
-    if (contractInfo.has(contract))
-        return contractInfo.get(contract);
-    const resp = await axios.get<string[]>(
-        `${api_base}/futures/contract/info/${contract}`,
+export async function GetContractInfoByAsset(name: string, exchange: string): Promise<ContractInfo[]> {
+    if (contractInfo.has(name))
+        return contractInfo.get(name);
+    const resp = await axios.get<string[][]>(
+        `${api_base}/futures/contract/info/${name}?g&e=${exchange}`,
         {
             headers: {
                 'Content-Type': 'application/json',
@@ -59,24 +59,27 @@ export async function GetContractInfo(contract: string): Promise<ContractInfo> {
             timeout: 2000,
         }
     );
-    const info = {
-        code: resp.data[0],
-        symbol: resp.data[1], 
-        exchange: resp.data[2], 
-        name: resp.data[3],
-        fut_code: resp.data[4], 
-        multiplier: resp.data[5],
-        trade_unit: resp.data[6],
-        per_unit: resp.data[7],
-        quote_unit: resp.data[8],
-        quote_unit_desc: resp.data[9],
-        d_mode_desc: resp.data[10],
-        list_date: resp.data[11],
-        delist_date: resp.data[12],
-        d_month: resp.data[13],
-        trade_time_desc: resp.data[14]
-    };
-    contractInfo.set(contract, info);
+    const info: ContractInfo[] = [];
+    for (const i of resp.data) {
+        info.push({
+        code: i[0],
+        symbol: i[1], 
+        exchange: i[2], 
+        name: i[3],
+        fut_code: i[4], 
+        multiplier: i[5],
+        trade_unit: i[6],
+        per_unit: i[7],
+        quote_unit: i[8],
+        quote_unit_desc: i[9],
+        d_mode_desc: i[10],
+        list_date: i[11],
+        delist_date: i[12],
+        d_month: i[13],
+        trade_time_desc: i[14]
+        });
+    }
+    contractInfo.set(name, info);
     return info;
 }
 

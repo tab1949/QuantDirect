@@ -35,7 +35,7 @@ upstreamConfig.tushare.fields[DataType.FUTURES_LIST] = [
     "list_date",
     "delist_date",
     "d_month",
-    "last_date",
+    // "last_date",
     "trade_time_desc"
 ];
 

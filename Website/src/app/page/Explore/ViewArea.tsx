@@ -50,7 +50,7 @@ interface FuturesContentProps {
 function FuturesContent({ exchange }: FuturesContentProps) {
     const { t } = useTranslation('explore');
     const [assets, setAssets] = useState<{name: string, code: string}[]>([]);
-    const [selectedAsset, setSelectedAsset] = useState<string>('AG');
+    const [selectedAsset, setSelectedAsset] = useState<{code: string, exchange: string}>({code: 'AG', exchange: 'SHF'});
     const [sortOpt, setSortOpt] = useState(1); // 0: ALL; 1: Active; 2: Most Active; 3: Continuous
     const [contracts, setContracts] = useState<FetchData.ContractInfo[]>([]);
     const [selectedContract, setSelectedContract] = useState({});
@@ -82,13 +82,11 @@ function FuturesContent({ exchange }: FuturesContentProps) {
     useEffect(() => {(async () => {
         const currentDate = new Date().toISOString().slice(0,10).replace(/-/g, '');
         const c: FetchData.ContractInfo[] = [];
+        const info = await FetchData.GetContractInfoByAsset(selectedAsset.code, selectedAsset.exchange);
         switch (sortOpt) {
         case 0: {
-            for (const i of contractList.current) {
-                if (i.replace(exchange_postfix[exchange], '').replace(/(TAS|连续|主力)$/g, '').replace(/\d+$/, '') == selectedAsset) {
-                    const info = await FetchData.GetContractInfo(i); 
-                    c.push(info);
-                }
+            for (const i of info) {
+                c.push(i);
             }
             c.sort((a: FetchData.ContractInfo, b: FetchData.ContractInfo): number => {
                 return Number(b.delist_date) - Number(a.delist_date);
@@ -96,12 +94,9 @@ function FuturesContent({ exchange }: FuturesContentProps) {
             break;
         }
         case 1: {
-            for (const i of contractList.current) {
-                if (i.replace(exchange_postfix[exchange], '').replace(/(TAS|连续|主力)$/g, '').replace(/\d+$/, '') == selectedAsset) {
-                    const info = await FetchData.GetContractInfo(i);
-                    if (!info.delist_date || info.delist_date > currentDate) 
-                        c.push(info);
-                }
+            for (const i of info) {
+                if (!i.delist_date || i.delist_date > currentDate) 
+                    c.push(i);
             }
             c.sort((a: FetchData.ContractInfo, b: FetchData.ContractInfo): number => {
                 return Number(a.delist_date) - Number(b.delist_date);
@@ -126,7 +121,7 @@ function FuturesContent({ exchange }: FuturesContentProps) {
             <div>{t('contracts.exchange')}{": "}</div>
             <ContractInfoItem>{i.exchange}</ContractInfoItem>
             <div>{t('contracts.trade_unit')}{": "}</div>
-            <ContractInfoItem>{i.trade_unit}</ContractInfoItem>
+            <ContractInfoItem>{i.per_unit}{i.trade_unit}</ContractInfoItem>
             <div>{t('contracts.quote_unit')}{": "}</div>
             <ContractInfoItem>{i.quote_unit}</ContractInfoItem>
             <div>{t('contracts.quote_unit_desc')}{": "}</div>
@@ -169,7 +164,7 @@ function FuturesContent({ exchange }: FuturesContentProps) {
                         <SubjectListItem>{t('no_data')}</SubjectListItem>
                     ) : (
                         assets.map((asset, index) => (
-                            <SubjectListItem key={`${asset}-${index}`} onClick={()=>{setSelectedAsset(asset.code);}}>
+                            <SubjectListItem key={`${asset}-${index}`} onClick={()=>{setSelectedAsset({code: asset.code, exchange: exchange});}}>
                                 <div>{asset.name}</div>
                             </SubjectListItem>
                         ))
