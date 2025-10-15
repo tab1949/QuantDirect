@@ -4,7 +4,7 @@
  - 
 ## About Redis
 ### Redis Keys
-Database 1 (futures):
+Database 0 (futures):
 | Key | Type | Description | Field |
 | --- | ---- | ----------- | ----- |
 |"contracts:info"|Hash|Contract information|Contract Code|
@@ -12,3 +12,4 @@ Database 1 (futures):
 |"contracts:assets:EXCHANGE"|Set|Names of Subject Assets||
 |"contracts:asset:code"|Hash|Codes of Subject Assets|Asset Name|
 |"contracts:update"|String|Latest update date||
+|"cache:futures:*"|String|Cached data||

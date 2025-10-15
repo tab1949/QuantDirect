@@ -9,6 +9,10 @@ export async function list(req: Request, res: Response) {
 
 export async function getInfoBySymbol(req: Request, res: Response) {
   const { symbol } = req.params;
+  if (req.query['g'] != null && req.query['e']) {
+    res.json(await futuresService.getContractByAsset(symbol, <string>req.query['e']));
+    return;
+  }
   const item = await futuresService.getContractBySymbol(symbol.toUpperCase());
   res.json(item);
 }

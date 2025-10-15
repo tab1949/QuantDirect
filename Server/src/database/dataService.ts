@@ -3,6 +3,14 @@ import path from 'path';
 import logger from '../logger';
 import RedisService from './redisService';
 
+const exchange_postfix: { [key: string]: string } = {
+    'DCE': '.DCE',
+    'CZCE': '.ZCE',
+    'SHFE': '.SHF',
+    'GFEX': '.GFE',
+    'CFFEX': '.CFX',
+    'INE': '.INE'
+}
 export class DataService {
     worker: Worker | null = null;
     updateIntervalMinute: NodeJS.Timeout | null = null;
@@ -148,6 +156,31 @@ export class DataService {
 
         try {
             return this.redisService.getContractInfo(contract);
+        } catch (e) {
+            logger.error(`Get contract info error: ${e}`);
+            throw e;
+        }
+    }
+
+    public async getContractInfoByAsset(name: string, ex: string): Promise<any[]> {
+        if (!this.redisService) {
+            throw new Error('Redis service not initialized');
+        }
+
+        try {
+            const cacheIndex = `contracts.${ex}.${name}`;
+            const cache = await this.redisService.getCache(cacheIndex);
+            if (cache !== null)
+                return cache;
+            const list = await this.redisService.getContractList(ex);
+            const ret: any[] = [];
+            for (const i of list) {
+                if (i.replace(exchange_postfix[ex], '').replace(/(TAS|连续|主力)$/g, '').replace(/\d+$/, '') == name) {
+                    ret.push(await this.redisService.getContractInfo(i));
+                }
+            }
+            this.redisService.setCache(cacheIndex, ret, 3600); // Expires 1 hour later
+            return ret;
         } catch (e) {
             logger.error(`Get contract info error: ${e}`);
             throw e;

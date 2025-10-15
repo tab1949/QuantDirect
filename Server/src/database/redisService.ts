@@ -6,7 +6,8 @@ const keys = {
     contractInfo: 'contracts:info',
     contractAssets: 'contracts:assets',
     contractAssetCodes: 'contracts:asset:code',
-    contractUpdateDate: 'contracts:update'
+    contractUpdateDate: 'contracts:update',
+    cache: "cache:futures"
 };
 
 class RedisService {
@@ -121,26 +122,20 @@ class RedisService {
         return await this.redisClient.get(keys.contractUpdateDate);
     }
 
-    // 缓存API响应
-    public async cacheApiResponse(endpoint: string, params: any, data: any, ttl: number = 300): Promise<void> {
+    public async setCache(key: string, data: any, ttl: number = 300): Promise<void> {
         try {
-            const cacheKey = `api:${endpoint}:${JSON.stringify(params)}`;
-            await this.redisClient.setJson(cacheKey, data, ttl);
-            logger.info(`Cached API response for ${endpoint}`);
+            await this.redisClient.setJson(`${keys.cache}:${key}`, data, ttl);
         } catch (error) {
-            logger.error('Failed to cache API response:', error);
+            logger.error('Failed to cache:', error);
             throw error;
         }
     }
 
-    // 获取缓存的API响应
-    public async getCachedApiResponse(endpoint: string, params: any): Promise<any> {
+    public async getCache(key: string): Promise<any> {
         try {
-            const cacheKey = `api:${endpoint}:${JSON.stringify(params)}`;
-            const data = await this.redisClient.getJson(cacheKey);
-            return data;
+            return this.redisClient.getJson(`${keys.cache}:${key}`);
         } catch (error) {
-            logger.error('Failed to get cached API response:', error);
+            logger.error('Failed to get cache:', error);
             throw error;
         }
     }

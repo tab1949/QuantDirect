@@ -4,7 +4,7 @@ import cors from 'cors';
 import apiRouter from './routes/index';
 import logger from './logger';
 import dataService from './database/dataService';
-import setDataSource from './services/redisFetchService';
+import setDataSource from './services/futuresService';
 import config from './config.json';
 
 dotenv.config();
