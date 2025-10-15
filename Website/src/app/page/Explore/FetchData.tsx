@@ -80,6 +80,6 @@ export async function GetContractInfo(contract: string): Promise<ContractInfo> {
     return info;
 }
 
-export function GetContractData() {
-    
+export async function GetContractData() : Promise<Array<Array<number>>> {
+    return [];
 }

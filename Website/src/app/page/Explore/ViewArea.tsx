@@ -4,7 +4,8 @@ import { useTranslation } from "react-i18next";
 import styled from "styled-components";
 import TimeDisplay from "./TimeDisplay";
 import * as FetchData from "./FetchData";
-import { HorizontalLine, InlineT3, ScrollList, ListItem, Div } from "../components/BasicLayout";
+import { HorizontalLine, Title1, Title2, Title3, InlineT3, ScrollList, ListItem, Div } from "../components/BasicLayout";
+import CandleStickChart from "../components/CandleStickChart";
 import { useState, useEffect, useCallback, useRef } from "react";
 
 const exchange_postfix: { [key: string]: string } = {
@@ -231,6 +232,7 @@ function FuturesContent({ exchange }: FuturesContentProps) {
                     {infoContent}
 
                 </Div>
+                {/* <CandleStickChart $dark={true} $data={FetchData.GetContractData()}/> */}
             </div>
         </div>
     );
@@ -243,6 +245,9 @@ export default function ViewArea(props: ViewAreaProps) {
     switch (props.$content) {
     case 'futures-overview':
         title = t('list.futures');
+        content = <Div>
+            <Title2>{t('intro.futures')}</Title2>
+        </Div>;
         break;
     case 'stocks-overview':
         title = t('list.stocks');
