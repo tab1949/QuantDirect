@@ -1,5 +1,5 @@
 import logger from "../logger";
-import {DataService} from "../database/dataService";
+import { DataService } from "./database/dataService";
 
 let database: DataService | null;
 
