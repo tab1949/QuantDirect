@@ -1,5 +1,7 @@
 import fs from "fs";
-import logger from "../../logger";
+import { getLogger } from "../../logger";
+
+const logger = getLogger('backup');
 
 export function Exists(dir: string): boolean {
     return fs.existsSync(dir);

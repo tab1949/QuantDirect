@@ -1,5 +1,7 @@
 import { createClient, RedisClientType } from 'redis';
-import logger from '../../logger';
+import { getLogger } from '../../logger';
+
+const logger = getLogger('redis');
 
 class RedisClient {
     private client: RedisClientType | null = null;

@@ -2,13 +2,14 @@ import dotenv from 'dotenv';
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import apiRouter from './routes/index';
-import logger from './logger';
+import { getLogger } from './logger';
 import dataService from './services/database/dataService';
 import setDataSource from './services/futuresService';
 import config from './config.json';
 
 dotenv.config();
 
+const logger = getLogger('main');
 const app = express();
 const data = dataService(config);
 setDataSource(data);

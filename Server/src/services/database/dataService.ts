@@ -1,7 +1,9 @@
 import {Worker} from 'worker_threads';
 import path from 'path';
-import logger from '../../logger';
+import { getLogger } from '../../logger';
 import RedisService from './redisService';
+
+const logger = getLogger('database');
 
 const exchange_postfix: { [key: string]: string } = {
     'DCE': '.DCE',

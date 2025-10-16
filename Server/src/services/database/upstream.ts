@@ -1,5 +1,7 @@
 import axios from "axios";
-import logger from "../../logger";
+import { getLogger } from "../../logger";
+
+const logger = getLogger('upstream');
 
 export enum DataType {
     FUTURES_LIST,

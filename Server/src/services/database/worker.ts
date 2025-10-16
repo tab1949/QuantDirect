@@ -1,7 +1,9 @@
 import { parentPort, workerData } from "worker_threads";
-import logger from "../../logger";
+import { getLogger } from "../../logger";
 import RedisService from "./redisService";
 import * as Futures from "./futures";
+
+const logger = getLogger('database');
 
 const workerConfig: { upstream: any; redis: any } = workerData as any;
 let redisService: RedisService | null = null;

@@ -1,5 +1,7 @@
-import logger from "../logger";
+import { getLogger } from "../logger";
 import { DataService } from "./database/dataService";
+
+const logger = getLogger('futures_service');
 
 let database: DataService | null;
 
