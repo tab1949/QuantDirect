@@ -1,6 +1,6 @@
 import {Worker} from 'worker_threads';
 import path from 'path';
-import logger from '../logger';
+import logger from '../../logger';
 import RedisService from './redisService';
 
 const exchange_postfix: { [key: string]: string } = {

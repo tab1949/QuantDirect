@@ -1,7 +1,7 @@
 import RedisService from "./redisService";
 import { getRequestData, fetchFromUpstream, DataType } from "./upstream";
 import * as Backup from "./backup";
-import logger from "../logger";
+import logger from "../../logger";
 
 export async function updateFuturesContractList(redis: RedisService, config: any): Promise<void> {
     let exchanges = ['DCE', 'CFFEX', 'CZCE', 'GFEX', 'INE', 'SHFE'];

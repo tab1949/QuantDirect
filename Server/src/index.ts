@@ -3,7 +3,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import apiRouter from './routes/index';
 import logger from './logger';
-import dataService from './database/dataService';
+import dataService from './services/database/dataService';
 import setDataSource from './services/futuresService';
 import config from './config.json';
 

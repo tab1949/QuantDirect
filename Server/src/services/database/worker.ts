@@ -1,5 +1,5 @@
 import { parentPort, workerData } from "worker_threads";
-import logger from "../logger";
+import logger from "../../logger";
 import RedisService from "./redisService";
 import * as Futures from "./futures";
 

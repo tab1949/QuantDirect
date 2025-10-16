@@ -120,7 +120,7 @@ export default function BasicLayout() {
             QuantDirect
           </HeaderElement>
 
-          <HeaderSeparator $darkMode={darkMode}/>
+          <HeaderSeparator/>
 
           <HeaderElement $selected={selected.explore} onClick={() => switchPage('explore')}>
             {t('basic.explore')}

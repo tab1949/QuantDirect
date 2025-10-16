@@ -1,5 +1,5 @@
 import RedisClient from './redisClient';
-import logger from '../logger';
+import logger from '../../logger';
 
 const keys = {
     contractList: 'contracts:list',

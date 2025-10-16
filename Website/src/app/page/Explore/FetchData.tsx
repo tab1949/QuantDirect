@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const api_base = 'http://localhost:888/api';
+const api_base = 'http://localhost:4000/api';
 const contractInfo = new Map;
 
 export async function GetSubjectAssets(exchange: string): Promise<{name: string, code: string}[]> {

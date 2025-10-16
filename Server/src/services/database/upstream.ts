@@ -1,5 +1,5 @@
 import axios from "axios";
-import logger from "../logger";
+import logger from "../../logger";
 
 export enum DataType {
     FUTURES_LIST,
