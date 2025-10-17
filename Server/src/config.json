@@ -1,4 +1,8 @@
 {
+    "server": {
+        "port": 888,
+        "base": "/api"
+    },
     "upstream": {
         "name": "tushare",
         "url_root": "http://api.tushare.pro",
@@ -13,5 +17,18 @@
         "retryDelayOnFailover": 100,
         "enableReadyCheck": false,
         "maxRetriesPerRequest": null
+    },
+    "market_data": {
+        "futures": {
+            "contracts": {
+                "dir": "/home/data/futures/json"
+            },
+            "options": {
+
+            }
+        },
+        "stock": {
+
+        }
     }
 }

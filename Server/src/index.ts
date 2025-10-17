@@ -1,4 +1,3 @@
-import dotenv from 'dotenv';
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import apiRouter from './routes/index';
@@ -7,15 +6,12 @@ import dataService from './services/database/dataService';
 import setDataSource from './services/futuresService';
 import config from './config.json';
 
-dotenv.config();
-
 const logger = getLogger('main');
 const app = express();
 const data = dataService(config);
 setDataSource(data);
-const port = process.env.API_PORT ? parseInt(process.env.API_PORT) : 4000;
-// Allow overriding API base path via env
-const API_BASE = process.env.API_BASE || '/api';
+const port = config.server.port;
+const API_BASE = config.server.base;
 
 app.use(cors());
 app.use(express.json());
