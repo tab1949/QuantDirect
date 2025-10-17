@@ -1,7 +1,13 @@
 # QuantDirect Server
 ## About API
 ### Endpoints:
- - 
+| Endpoint | Parameters | Description |
+| -------- | ---------- | ----------- |
+|/api/futures/contract/list/:exchange||Get contracts of specified exchange(:exchange)|
+|/api/futures/contract/info/:symbol||Get information of specified contract(:symbol)|
+|/api/futures/contract/assets/:exchange||Get a list of subject asset names and codes of specified exchange(:exchange)|
+|/api/futures/contract/info/:symbol?g&e=|e: Exchange Code|Get a group of asset names and codes of specified exchange(:exchange)|
+|/api/futures/contract/data/:code||Get history market data of specified contract(:code).|
 ## About Redis
 ### Redis Keys
 Database 0 (futures):

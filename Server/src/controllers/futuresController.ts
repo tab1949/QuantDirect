@@ -22,3 +22,12 @@ export async function getAssets(req: Request, res: Response) {
   const data = await futuresService.getAssets(exchange);
   res.json(data);
 }
+
+export async function getFuturesData(req: Request, res: Response) {
+  const { code } = req.params;
+  const data = await futuresService.getFuturesData(code);
+  if (data)
+    res.json(data);
+  else
+    res.status(404).json({ error: `${code} not found` });
+}

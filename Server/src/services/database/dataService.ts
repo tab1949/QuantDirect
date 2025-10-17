@@ -2,6 +2,7 @@ import {Worker} from 'worker_threads';
 import path from 'path';
 import { getLogger } from '../../logger';
 import RedisService from './redisService';
+import fs from 'fs';
 
 const logger = getLogger('database');
 
@@ -13,6 +14,20 @@ const exchange_postfix: { [key: string]: string } = {
     'CFFEX': '.CFX',
     'INE': '.INE'
 }
+
+const exchange_alias: { [key: string]: string } = {
+    'ZCE': 'CZCE',
+    'CZCE': 'ZCE',
+    'SHF': 'SHFE',
+    'SHFE': 'SHF',
+    'GFE': 'GFEX',
+    'GFEX': 'GFE',
+    'CFX': 'CFFEX',
+    'CFFEX': 'CFX',
+    'DCE': 'DCE',
+    'INE': 'INE'
+}
+
 export class DataService {
     worker: Worker | null = null;
     updateIntervalMinute: NodeJS.Timeout | null = null;
@@ -201,6 +216,16 @@ export class DataService {
             throw e;
         }
     }
+
+    public async getFuturesData(code: string): Promise<any> {
+        const [contract, exchange] = code.split('.', 2);
+        const asset = contract.match(/^[A-Za-z]+/)?.[0] || '';
+        const path = <string>this.config.market_data.futures.contracts.dir + '/' + exchange + '/' + asset + '/' + contract + '.json';
+        if (fs.existsSync(path))
+            return JSON.parse(await fs.promises.readFile(path, 'utf8'));
+        return null;
+    }
+
 }; // class DataService
 
 export default function dataService(config: any): DataService {

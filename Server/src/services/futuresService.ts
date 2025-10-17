@@ -36,3 +36,11 @@ export async function getAssets(exchange: string): Promise<any> {
   else
     logger.error(`Redis service is not configured.`);
 }
+
+export async function getFuturesData(code: string): Promise<any> {
+  if (database !== null) 
+    return database.getFuturesData(code);
+  else
+    logger.error(`Redis service is not configured.`);
+
+}
