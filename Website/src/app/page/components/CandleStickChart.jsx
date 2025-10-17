@@ -1,8 +1,23 @@
+// !!! Needs to be refactored
+
 'use client';
 import { useState, useEffect, useRef, useCallback, useMemo, memo } from "react";
 
-const Chart = memo(function Chart({$dark, $data, $width, $height, $redRise=true, $displayRange={begin: 0, end: $data.date.length - 1, limit: $data.date.length - 1}, $aim={display: false, x: 0, y: 0}}) {
+function ConvertData(d) {
+    let ret = {date: [], open: [], close: [], high: [], low: []};
+    for (const i of d) {
+        ret.date.push(i[0]);
+        ret.open.push(i[1]);
+        ret.high.push(i[2]);
+        ret.low.push(i[3]);
+        ret.close.push(i[4]);
+    }
+    return ret;
+}
+
+const Chart = memo(function Chart({$dark, $data, $width, $height, $redRise=true, $displayRange={begin: 0, end: $data.length - 1, limit: $data.length - 1}, $aim={display: false, x: 0, y: 0}}) {
     // Memoize expensive calculations
+        const data = ConvertData($data);
     const chartData = useMemo(() => {
         const displayCount = $displayRange.end - $displayRange.begin + 1;
         const scaleSpace = (850 / (displayCount <= 5? displayCount: 20));
@@ -12,11 +27,11 @@ const Chart = memo(function Chart({$dark, $data, $width, $height, $redRise=true,
         const stickSpace = 850 / displayCount;
         
         // Calculate high/low values efficiently
-        let high = $data.high[$displayRange.begin];
+        let high = data.high[$displayRange.begin];
         let low = high;
         for (let i = $displayRange.begin; i <= $displayRange.end; ++i) {
-            if ($data.high[i] > high) high = $data.high[i];
-            if ($data.low[i] < low) low = $data.low[i];
+            if (data.high[i] > high) high = data.high[i];
+            if (data.low[i] < low) low = data.low[i];
         }
         
         const range = high - low;
@@ -36,7 +51,7 @@ const Chart = memo(function Chart({$dark, $data, $width, $height, $redRise=true,
             range,
             valueScale
         };
-    }, [$data.high, $data.low, $displayRange]);
+    }, [$data, $displayRange]);
     
     const colors = useMemo(() => ({
         markColor: ($dark? '#d8d8d8': '#4c4c4c'),
@@ -99,13 +114,13 @@ const Chart = memo(function Chart({$dark, $data, $width, $height, $redRise=true,
             if (i % dateSample === 0) {
                 marks.push(
                     <text key={`date-${j}`} x={150+i*stickSpace} y={980} fill={markColor} fontSize={'25px'}>
-                        {$data.date[j]}
+                        {data.date[j]}
                     </text>
                 );
             }
         }
         return marks;
-    }, [chartData, colors, $displayRange, $data.date]);
+    }, [chartData, colors, $displayRange, data]);
     // Memoize candle sticks - most expensive operation
     const sticks = useMemo(() => {
         const { stickSpace, range, high } = chartData;
@@ -116,11 +131,11 @@ const Chart = memo(function Chart({$dark, $data, $width, $height, $redRise=true,
         for (let i = 0, j = $displayRange.begin; j <= $displayRange.end; ++i, ++j) {
             const x = 150 + i * stickSpace;
             
-            if ($data.open[j] > $data.close[j]) {
-                const bodyHeight = yUnit > 0 ? yUnit*(Math.abs($data.open[j]-$data.close[j])+0.1) : 1;
-                const wickY1 = yUnit > 0 ? 50+yUnit*(high-$data.low[j]) : 400;
-                const wickY2 = yUnit > 0 ? 50+yUnit*(high-$data.high[j]) : 400;
-                const bodyY = yUnit > 0 ? 50+yUnit*(high-$data.open[j]) : 400;
+            if (data.open[j] > data.close[j]) {
+                const bodyHeight = yUnit > 0 ? yUnit*(Math.abs(data.open[j]-data.close[j])+0.1) : 1;
+                const wickY1 = yUnit > 0 ? 50+yUnit*(high-data.low[j]) : 400;
+                const wickY2 = yUnit > 0 ? 50+yUnit*(high-data.high[j]) : 400;
+                const bodyY = yUnit > 0 ? 50+yUnit*(high-data.open[j]) : 400;
                 
                 candleSticks.push(
                     <g key={`candle-${j}`}>
@@ -135,11 +150,11 @@ const Chart = memo(function Chart({$dark, $data, $width, $height, $redRise=true,
                     </g>
                 );
             }
-            else if ($data.open[j] < $data.close[j]) {
-                const bodyHeight = yUnit > 0 ? yUnit*(Math.abs($data.open[j]-$data.close[j])+0.1) : 1;
-                const wickY1 = yUnit > 0 ? 50+yUnit*(high-$data.low[j]) : 400;
-                const wickY2 = yUnit > 0 ? 50+yUnit*(high-$data.high[j]) : 400;
-                const bodyY = yUnit > 0 ? 50+yUnit*(high-$data.close[j]) : 400;
+            else if (data.open[j] < data.close[j]) {
+                const bodyHeight = yUnit > 0 ? yUnit*(Math.abs(data.open[j]-data.close[j])+0.1) : 1;
+                const wickY1 = yUnit > 0 ? 50+yUnit*(high-data.low[j]) : 400;
+                const wickY2 = yUnit > 0 ? 50+yUnit*(high-data.high[j]) : 400;
+                const bodyY = yUnit > 0 ? 50+yUnit*(high-data.close[j]) : 400;
                 
                 candleSticks.push(
                     <g key={`candle-${j}`}>
@@ -155,9 +170,9 @@ const Chart = memo(function Chart({$dark, $data, $width, $height, $redRise=true,
                 );
             }
             else {
-                const dojiY = yUnit > 0 ? 50+yUnit*(high-$data.close[j]) : 400;
-                const wickY1 = yUnit > 0 ? 50+yUnit*(high-$data.low[j]) : 400;
-                const wickY2 = yUnit > 0 ? 50+yUnit*(high-$data.high[j]) : 400;
+                const dojiY = yUnit > 0 ? 50+yUnit*(high-data.close[j]) : 400;
+                const wickY1 = yUnit > 0 ? 50+yUnit*(high-data.low[j]) : 400;
+                const wickY2 = yUnit > 0 ? 50+yUnit*(high-data.high[j]) : 400;
                 
                 candleSticks.push(
                     <g key={`candle-${j}`}>
@@ -174,7 +189,7 @@ const Chart = memo(function Chart({$dark, $data, $width, $height, $redRise=true,
             }
         }
         return candleSticks;
-    }, [chartData, colors, $displayRange, $data.open, $data.close, $data.high, $data.low]);
+    }, [chartData, colors, $displayRange, data.open, data.close, data.high, data.low]);
 
     return (<svg width={1000} height={1000}
         style={{
@@ -341,7 +356,7 @@ const ControlArea = memo(function ControlArea({$width, $height, $displayRange, $
 });
 
 export default function CandleStickChart({$dark, $width = 1000, $height = 1000, $data}) { 
-    const [displayRange, setDisplayRange] = useState({begin: 0, end: $data.date.length - 1, limit: $data.date.length - 1});
+    const [displayRange, setDisplayRange] = useState({begin: $data.length > 100? $data.length-49 : 0, end: $data.length - 1, limit: $data.length - 1});
     const [aim, setAim] = useState({display: false, x: 0, y: 0});
     
     // Memoize container styles

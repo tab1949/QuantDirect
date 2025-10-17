@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const api_base = 'http://localhost:4000/api';
+const api_base = 'http://localhost:888/api';
 const contractInfo = new Map;
 
 export async function GetSubjectAssets(exchange: string): Promise<{name: string, code: string}[]> {
@@ -83,6 +83,28 @@ export async function GetContractInfoByAsset(name: string, exchange: string): Pr
     return info;
 }
 
-export async function GetContractData() : Promise<Array<Array<number>>> {
-    return [];
+export interface FuturesContractData {
+    fields: string[],
+    data: Array<Array<string|number>>
+}
+
+export async function GetContractData(contract: string) : Promise<FuturesContractData|null> {
+    try {
+        const response = await axios.get<FuturesContractData>(
+            `${api_base}/futures/contract/data/${contract}`,
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                timeout: 2000,
+            }
+        );
+        return response.data;
+    }
+    catch (e) {
+        if (axios.isAxiosError(e) && e.response?.status === 404) {
+            return null;
+        }
+        return null;
+    }
 }

@@ -57,6 +57,7 @@ function FuturesContent({ exchange }: FuturesContentProps) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [infoContent, setInfoContent] = useState(<></>);
+    const [data, setData] = useState<FetchData.FuturesContractData | null>(null);
     const contractList = useRef<string[]>([]);
 
     const optionClicked = useCallback(() => {
@@ -78,7 +79,6 @@ function FuturesContent({ exchange }: FuturesContentProps) {
         }
     })(); }, [exchange, t]);
 
-    // TODO: Optimize sorting performance
     useEffect(() => {(async () => {
         const currentDate = new Date().toISOString().slice(0,10).replace(/-/g, '');
         const c: FetchData.ContractInfo[] = [];
@@ -107,7 +107,7 @@ function FuturesContent({ exchange }: FuturesContentProps) {
         setContracts(c);
     })();}, [selectedAsset, sortOpt, exchange]);
 
-    useEffect(() => {
+    useEffect(() => {(async () => {
         if (selectedContract == null)
             return;
         const i = selectedContract as FetchData.ContractInfo;
@@ -138,7 +138,10 @@ function FuturesContent({ exchange }: FuturesContentProps) {
             <div>{i.trade_time_desc}</div>
         </ScrollList>;
         setInfoContent(c);
-    }, [selectedContract, t]);
+
+        setData(await FetchData.GetContractData(i.code));
+
+    })();}, [selectedContract, t]);
 
     return (
         <div style={{
@@ -225,8 +228,13 @@ function FuturesContent({ exchange }: FuturesContentProps) {
                     borderRadius: "8px",
                     margin: '3px'}}>
                     {infoContent}
-
                 </Div>
+                {data? <Div style={{
+                    position: 'relative',
+                    height: '100%'
+                }}>
+                    <CandleStickChart $dark={true} $data={data.data} $height={500} $width={700}></CandleStickChart>
+                </Div>: <Title1>{t('no_data')}</Title1>}
                 {/* <CandleStickChart $dark={true} $data={FetchData.GetContractData()}/> */}
             </div>
         </div>

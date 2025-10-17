@@ -220,7 +220,7 @@ export class DataService {
     public async getFuturesData(code: string): Promise<any> {
         const [contract, exchange] = code.split('.', 2);
         const asset = contract.match(/^[A-Za-z]+/)?.[0] || '';
-        const path = <string>this.config.market_data.futures.contracts.dir + '/' + exchange + '/' + asset + '/' + contract + '.json';
+        const path = <string>this.config.market_data.futures.contracts.dir + '/' + exchange_alias[exchange] + '/' + asset + '/' + contract + '.json';
         if (fs.existsSync(path))
             return JSON.parse(await fs.promises.readFile(path, 'utf8'));
         return null;
