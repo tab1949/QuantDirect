@@ -4,18 +4,9 @@ import { useTranslation } from "react-i18next";
 import styled from "styled-components";
 import TimeDisplay from "./TimeDisplay";
 import * as FetchData from "./FetchData";
-import { HorizontalLine, Title1, Title2, Title3, InlineT3, ScrollList, ListItem, Div } from "../components/BasicLayout";
-import CandleStickChart from "../components/CandleStickChart";
+import { HorizontalLine, Title1, Title2, InlineT3, ScrollList, ListItem, Div } from "../components/BasicLayout";
+import CandleStickChart from "../components/CandleStickChart.pending";
 import { useState, useEffect, useCallback, useRef } from "react";
-
-const exchange_postfix: { [key: string]: string } = {
-    'DCE': '.DCE',
-    'CZCE': '.ZCE',
-    'SHFE': '.SHF',
-    'GFEX': '.GFE',
-    'CFFEX': '.CFX',
-    'INE': '.INE'
-}
 
 interface ViewAreaProps {
     $content: string
@@ -231,9 +222,10 @@ function FuturesContent({ exchange }: FuturesContentProps) {
                 </Div>
                 {data? <Div style={{
                     position: 'relative',
-                    height: '100%'
+                    height: '100%',
+                    width: '100%'
                 }}>
-                    <CandleStickChart $dark={true} $data={data.data} $height={500} $width={700}></CandleStickChart>
+                    <CandleStickChart fields={data.fields} data={data.data}></CandleStickChart>
                 </Div>: <Title1>{t('no_data')}</Title1>}
                 {/* <CandleStickChart $dark={true} $data={FetchData.GetContractData()}/> */}
             </div>
