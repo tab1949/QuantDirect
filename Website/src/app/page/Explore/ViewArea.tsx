@@ -5,7 +5,7 @@ import styled from "styled-components";
 import TimeDisplay from "./TimeDisplay";
 import * as FetchData from "./FetchData";
 import { HorizontalLine, Title1, Title2, InlineT3, ScrollList, ListItem, Div } from "../components/BasicLayout";
-import CandleStickChart from "../components/CandleStickChart.pending";
+import CandleStickChart from "../components/CandleStickChart";
 import { useState, useEffect, useCallback, useRef } from "react";
 
 interface ViewAreaProps {
@@ -222,10 +222,10 @@ function FuturesContent({ exchange }: FuturesContentProps) {
                 </Div>
                 {data? <Div style={{
                     position: 'relative',
-                    height: '100%',
-                    width: '100%'
+                    height: '50%',
+                    width: '60%'
                 }}>
-                    <CandleStickChart fields={data.fields} data={data.data}></CandleStickChart>
+                    <CandleStickChart data={data}></CandleStickChart>
                 </Div>: <Title1>{t('no_data')}</Title1>}
                 {/* <CandleStickChart $dark={true} $data={FetchData.GetContractData()}/> */}
             </div>

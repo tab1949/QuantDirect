@@ -43,6 +43,16 @@
             "delist_date": "最後交易日",
             "trade_time": "交易時間"
         },
+        "data_fields": {
+            "open": "開盤價",
+            "close": "收盤價",
+            "high": "最高價",
+            "low": "最低價",
+            "volume": "成交量",
+            "amount": "成交額",
+            "time": "時間",
+            "open_interest": "持倉量"
+        },
         "sort": "篩選",
         "all_contracts": "所有合約",
         "most_active": "主力合約",

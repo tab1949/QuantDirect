@@ -43,6 +43,16 @@
             "delist_date": "Last Trading Day",
             "trade_time": "Trading Hours"
         },
+        "data_fields": {
+            "open": "Open",
+            "close": "Close",
+            "high": "High",
+            "low": "Low",
+            "volume": "Volume",
+            "amount": "Amount",
+            "time": "Time",
+            "open_interest": "Open Interest"
+        },
         "sort": "Sort",
         "all_contracts": "All",
         "most_active": "Most Active",

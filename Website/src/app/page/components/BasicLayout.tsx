@@ -19,6 +19,7 @@ export const Page = styled.div<{ $darkMode: boolean}>`
   --theme-background-color: ${props => props.$darkMode? '#0f0f0f' : '#f1f3f4'};
   --theme-chart-bg-color: ${props => props.$darkMode? '#151515' : '#f9f9f9'};
   --theme-chart-scale-color: ${props => props.$darkMode? '#d8d8d8' : '#4c4c4c'};
+  --theme-chart-border-color: ${props => props.$darkMode? '#ffffff' : '#000000'};
   --theme-font-color: ${props => props.$darkMode? '#a8b2c0' : '#6e7c8e'};
   --theme-font-color-content: ${props => props.$darkMode? '#c5cfdd' : '#4a525c'};
   --theme-font-color-hover: ${props => props.$darkMode? '#d1d9e6' : '#374151'};

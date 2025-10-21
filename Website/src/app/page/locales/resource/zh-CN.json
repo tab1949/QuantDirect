@@ -43,6 +43,16 @@
             "delist_date": "最后交易日",
             "trade_time": "交易时间"
         },
+        "data_fields": {
+            "open": "开盘价",
+            "close": "收盘价",
+            "high": "最高价",
+            "low": "最低价",
+            "volume": "成交量",
+            "amount": "成交额",
+            "time": "时间",
+            "open_interest": "持仓量"
+        },
         "intro": {
             "futures": "目前仅提供不定期延迟更新的每分钟数据以及由此推算的其他周期数据，以及延迟更新的每日数据"
         },

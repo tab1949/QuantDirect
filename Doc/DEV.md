@@ -5,8 +5,7 @@
 - Server: Skip fetching from internet if local data is updated in the same day
 
 ### Level 1 (Incremental)
-- Website: CandleStickChart.pending: Add interactions for CandleStickChart.pending
-- Website: CandleStickChart.pending: Add support for displaying customized indexes
+- Website: CandleStickChart: Add index displaying support
 - Website: Add LineChart
 - Website: Add BarChart
 - Website: Combined chart
