@@ -38,17 +38,26 @@ export async function updateFuturesContractList(redis: RedisService, config: any
             await redis.flush();
             listDate = ""; // Fetch entire list
         }
-    }
+    } 
     else if (redisDataVer === null || Backup.GetUpdateTime(backup_d) > redisDataVer) {
         if (Backup.GetUpdateTime(backup_d) >= currentDate) {
             // Local backup is up-to-date but Redis is empty
             logger.warn("Redis is empty or out-of-date, but backup files is up-to-date.");
             logger.log("Loading data from backup into Redis...");
             await redis.flush();
-            // TODO: Load from json file
-            
+            // Load from json file
+            for (const exchange of exchanges) {
+                const data = Backup.ReadFuturesContractList(backup_d, exchange);
+                redis.initFuturesContractInfo(data, exchange);
+            }
+            Backup.SetUpdateTime(backup_d, currentDate);
             exchanges = []; // Skip data fetching loop
         }
+    }
+    if (listDate == currentDate && Backup.GetUpdateTime(backup_d) == currentDate && redisDataVer) {
+        logger.info("Local data is up-tp-date. No need to fetch from internet.");
+        logger.info("------- Tradable Lists Update Finished --------");
+        return;
     }
     for (const exchange of exchanges) {
         try {
@@ -74,6 +83,8 @@ export async function updateFuturesContractList(redis: RedisService, config: any
                 continue;
             } 
             if (data.items.length == 0) { // Already up-to-date
+                Backup.SetUpdateTime(backup_d, currentDate);
+                await redis.setContractsUpdated(currentDate);
                 logger.log(`${exchange}: already up-to-date`);
                 continue;
             } 
@@ -81,14 +92,17 @@ export async function updateFuturesContractList(redis: RedisService, config: any
             if (listDate != "") {
                 Backup.UpdateFuturesContractList(backup_d, exchange, data.items);
                 await redis.updateFuturesContractInfo(data, exchange);
+                Backup.SetUpdateTime(backup_d, currentDate);
+                await redis.setContractsUpdated(currentDate);
                 let symbol = new Array<string>;
                 for (let item of data.items) symbol.push(item[1]);
                 logger.info(`Added ${symbol.length} ${exchange} contract(s): ${symbol}`);
                 continue;
             }
             Backup.CreateFuturesContractList(backup_d, exchange, JSON.stringify(data));
-            Backup.SetUpdateTime(backup_d, currentDate);
             await redis.initFuturesContractInfo(data, exchange);
+            Backup.SetUpdateTime(backup_d, currentDate);
+            await redis.setContractsUpdated(currentDate);
             logger.info(`Initialized ${exchange} contract list, updated ${data.items.length} items.`);
         } catch (error) {
             logger.error(`Error fetching futures list for ${exchange}:`, error);

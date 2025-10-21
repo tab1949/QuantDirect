@@ -64,6 +64,27 @@ export function UpdateFuturesContractList(dir: string, exchange: string, data: A
     });
 }
 
+export interface ContractListData {
+    fields: string[],
+    items: Array<Array<string|number>>
+};
+
+/**
+ * @param dir Root of backup directory
+ * @param exchange Exchange code in upper case
+ */
+export function ReadFuturesContractList(dir: string, exchange: string): ContractListData {
+    const file = `${dir}/futures/contracts/${exchange}_list.json`;
+    try {
+        const data = JSON.parse(fs.readFileSync(file).toString());
+        return {fields: data.fields, items: data.items};
+    }
+    catch (e) {
+        logger.error(`Failed to read ${file}, error: ${e}`);
+        throw e;
+    }
+}
+
 export function SetUpdateTime(dir: string, date: string): void {
     fs.writeFileSync(`${dir}/futures/contracts/update`, date);
 }

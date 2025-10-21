@@ -81,6 +81,8 @@ class RedisService {
         try {
             let list: Array<string> = [];
             for (let item of data.items) {
+                if (await this.redisClient.hGet(keys.contractInfo, item[0]))
+                    continue;
                 this.redisClient.hSetJson(keys.contractInfo, item[0] as string, item);
                 list.push(item[0] as string);
                 let assetName = (item[3] as string).replace(/TAS$/, '').replace(/连续$/, '').replace(/主力$/, '').replace(/\d+$/, '');
