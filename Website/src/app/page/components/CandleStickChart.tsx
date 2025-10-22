@@ -1,24 +1,19 @@
 import { useState, useEffect, useRef, useCallback, useMemo, ReactElement, PointerEventHandler, WheelEventHandler, memo } from "react";
 import { useTranslation } from "react-i18next";
 
-export interface CandleStickChartData {
-    fields: string[],
-    data: Array<Array<string|number>>
-}
+import { MarketData, CandleStickChartData, PERIOD_OPTIONS } from '../calculate/MarketData';
 
 interface ContentInterface {
     $w: number,
     $h: number,
-    $data: CandleStickChartData
+    $data: MarketData
 };
 
-const validateChartData = (data: Array<Array<string|number>>, displayRange: {begin: number, end: number}, dataIndex: {time: number, open: number, close: number, high: number, low: number}) => {
+const validateChartData = (data: CandleStickChartData, displayRange: {begin: number, end: number}) => {
     if (!data || data.length === 0) return false;
     if (displayRange.begin < 0 || displayRange.end < 0) return false;
     if (displayRange.begin >= data.length || displayRange.end >= data.length) return false;
     if (displayRange.begin > displayRange.end) return false;
-    if (dataIndex.high === -1 || dataIndex.low === -1) return false;
-    if (!data[displayRange.begin] || !data[displayRange.begin][dataIndex.high]) return false;
     return true;
 };
 
@@ -30,68 +25,26 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
     const { t } = useTranslation('explore');
     const yScaleCount = 4;
     const [displayRange, setDisplayRange] = useState({begin: 0, end: 0});
-    const data = param.$data.data;
+    const [period, setPeriod] = useState('1min');
+    const data = useMemo(() => param.$data.getData(period), [param.$data, period]);
     const w = param.$w;
     const h = param.$h;
 
     useEffect(() => {
-        if (param.$data.data.length > 0) {
+        if (data.length > 0) {
             const newRange = {
-                begin: param.$data.data.length > 100? param.$data.data.length - 50 : 0, 
-                end: param.$data.data.length - 1 
+                begin: data.length > 100? data.length - 50 : 0, 
+                end: data.length - 1 
             };
             setDisplayRange(newRange);
         } else {
             setDisplayRange({begin: 0, end: 0});
         }
-    }, [param.$data.data.length]);
-
-    // Derive indexes of each kind of data
-    const dataIndex = useMemo(() => {
-        const ret = {
-            time: -1,
-            open: -1,
-            close: -1,
-            high: -1,
-            low: -1,
-            volume: -1,
-            amount: -1,
-            open_interest: -1
-        };
-        param.$data.fields.forEach((v: string, i: number) => { 
-            switch(v) {
-            case 'datetime':
-                ret.time = i;
-                break;
-            case 'open':
-                ret.open = i;
-                break;
-            case 'close':
-                ret.close = i;
-                break;
-            case 'high': 
-                ret.high = i;
-                break;
-            case 'low':
-                ret.low = i;
-                break;
-            case 'volume':
-                ret.volume = i;
-                break;
-            case 'money':
-                ret.amount = i;
-                break;
-            case 'open_interest':
-                ret.open_interest = i;
-                break;
-            }
-        });
-        return ret;
-    }, [param.$data.fields]); 
+    }, [data.length]);
 
     // Calculation of important properties
     const chart = useMemo(() => {
-        if (!validateChartData(data, displayRange, dataIndex)) {
+        if (!validateChartData(data, displayRange)) {
             return {
                 range: displayRange,
                 fontSize: h / 25 < 16 ? h / 25 : 16,
@@ -110,14 +63,14 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
             };
         }
 
-        let high = data[displayRange.begin][dataIndex.high] as number;
+        let high = data.data.high[displayRange.begin];
         let low = high;
         const yScaleValue: Array<number> = [];
         for (let i = displayRange.begin; i <= displayRange.end; ++i) {
-            if (!data[i]) continue; // Only check data existence
-            
-            const highVal = data[i][dataIndex.high] as number;
-            const lowVal = data[i][dataIndex.low] as number;
+            if (!data.data.high[i] || !data.data.low[i]) continue; // Only check data existence
+
+            const highVal = data.data.high[i];
+            const lowVal = data.data.low[i];
             
             if (highVal > high) high = highVal;
             if (lowVal < low) low = lowVal;
@@ -147,7 +100,7 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
                 low: low
             }
         }
-    }, [dataIndex, yScaleCount, h, data, displayRange]);
+    }, [yScaleCount, h, data, displayRange]);
     const offsetX = chart.data.max_length * chart.fontSize + 10;
 
     const yScale = useMemo(() => {
@@ -186,7 +139,7 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
     const sticks = useMemo(() => {
         const ret: ReactElement[] = [];
 
-        if (!validateChartData(data, displayRange, dataIndex))
+        if (!validateChartData(data, displayRange))
             return ret;
         
         const displayCount = displayRange.end - displayRange.begin + 1;
@@ -200,13 +153,13 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
         const mainTickLength = Math.min(20, bottomSpace * 0.5);
         const labelY = y + mainTickLength + 11;
         for (let i = 0, k = displayRange.begin; i < displayCount; ++i, ++ k) {
-            if (!data[k]) continue; // Only check data existence
+            if (!data.data.high[k] || !data.data.low[k] || !data.data.open[k] || !data.data.close[k]) continue; // Only check data existence
             
             const x = offsetX + width * i;
-            const height = unitY * ((data[k][dataIndex.open] as number) - (data[k][dataIndex.close] as number));
-            const bodyY = CHART_TOP_OFFSET + unitY * (chart.data.high - ((height > 0? data[k][dataIndex.open]: data[k][dataIndex.close]) as number));
-            const wickY1 = CHART_TOP_OFFSET + unitY * (chart.data.high - (data[k][dataIndex.high] as number));
-            const wickY2 = CHART_TOP_OFFSET + unitY * (chart.data.high - (data[k][dataIndex.low] as number));
+            const height = unitY * ((data.data.open[k] as number) - (data.data.close[k] as number));
+            const bodyY = CHART_TOP_OFFSET + unitY * (chart.data.high - ((height > 0? data.data.open[k]: data.data.close[k]) as number));
+            const wickY1 = CHART_TOP_OFFSET + unitY * (chart.data.high - (data.data.high[k] as number));
+            const wickY2 = CHART_TOP_OFFSET + unitY * (chart.data.high - (data.data.low[k] as number));
             if (height < 0) { // rise
                 ret.push(<g key={`candle-${i}`}>
                     <rect key={`candle-${i}-body`} x={x-bodyWidth/2} width={bodyWidth} y={bodyY} height={-height} fill="red" stroke="red" strokeWidth={2}/>
@@ -226,10 +179,16 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
                 </g>);
             }            
 
-            if (i % sample == 0 && data[k] && dataIndex.time !== -1) {
+            if (i % sample == 0 && data.data.time[k]) {
+                const timeStr = data.data.time[k];
                 let text = '?';
-                if ((data[k][dataIndex.time] as string).match(/\d+-\d\d-\d\d\s\d\d:\d\d:\d\d/) !== null) {
-                    text = (data[k][dataIndex.time] as string).split(' ', 2)[1].replace(/:\d\d$/, '');
+                if (timeStr.includes(' ')) {
+                    // YYYY-MM-DD HH:mm:SS -> HH:mm
+                    const timePart = timeStr.split(' ')[1];
+                    text = timePart.replace(/:\d\d$/, ''); 
+                } else if (timeStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                    // YYYY-MM-DD -> MM-DD
+                    text = timeStr.substring(5); 
                 }
                 ret.push(<text key={`scale-x-${i}-t`} x={x-5} y={labelY} fill={'var(--theme-chart-scale-color)'} fontSize={chart.fontSize-3}>
                     {text}
@@ -237,7 +196,7 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
             }
         }
         return ret;
-    }, [data, w, h, chart.data.high, chart.data.low, chart.fontSize, dataIndex, displayRange, offsetX]);
+    }, [data, w, h, chart.data.high, chart.data.low, chart.fontSize, displayRange, offsetX]);
 
     const SVGRef = useRef<SVGSVGElement>(null);
     const [displayAim, setDisplayAim] = useState(false);
@@ -248,7 +207,7 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
 
     const aim = useMemo(() => {
         const ret: ReactElement[] = [];
-        if (!displayAim)
+        if (!displayAim || !chart.data.high || !chart.data.low)
             return ret;
         const stickWidth = (w - offsetX) / (displayRange.end - displayRange.begin + 1);
         let stickIndex = Math.round((aimPos.x - offsetX) / stickWidth);
@@ -267,19 +226,19 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
         if (stickIndex < 0) stickIndex = 0;
         else if (stickIndex >= data.length) stickIndex = data.length - 1;
         const info = [
-            (data[stickIndex][dataIndex.time] as string).replace(/:\d\d$/, ''), 
-            data[stickIndex][dataIndex.open] as number, 
-            data[stickIndex][dataIndex.close] as number, 
-            data[stickIndex][dataIndex.high] as number, 
-            data[stickIndex][dataIndex.low] as number, 
-            data[stickIndex][dataIndex.volume] as number, 
-            data[stickIndex][dataIndex.amount] as number, 
-            data[stickIndex][dataIndex.open_interest] as number];
+            data.data.time[stickIndex].replace(/:\d\d$/, ''), 
+            data.data.open[stickIndex], 
+            data.data.close[stickIndex], 
+            data.data.high[stickIndex], 
+            data.data.low[stickIndex], 
+            data.data.volume[stickIndex], 
+            data.data.amount[stickIndex], 
+            data.data.open_interest[stickIndex]];
         for(let i = 0; i < 8; i++) {
           ret.push(<text key={`aim-info-text-${i}`} x={infoX + 5} y={CHART_TOP_OFFSET - 5 + i * chart.fontSize * 1.2} fontSize={chart.fontSize} fill="var(--theme-chart-scale-color)">{`${t(`data_fields.${AIM_INFO_FIELDS[i]}`)}: ${info[i]}`}</text>);
         }   
         return ret;
-    }, [displayAim, aimPos.x, aimPos.y, w, h, offsetX, displayRange.begin, displayRange.end, chart.fontSize, chart.data.high, chart.data.low, data, dataIndex, t]);
+    }, [displayAim, aimPos.x, aimPos.y, w, h, offsetX, displayRange.begin, displayRange.end, chart.fontSize, chart.data.high, chart.data.low, data, t]);
 
     const clickTimer = useRef<NodeJS.Timeout>(null);
 
@@ -420,8 +379,47 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
             position: 'relative',
             height: `${CHART_TOP_OFFSET}px`,
             width: '100%',
-            backgroundColor: 'blue'
-        }}></div>
+            backgroundColor: 'transparent',
+            display: 'flex',
+            alignItems: 'center',
+            padding: '0 10px',
+            color: 'var(--theme-chart-scale-color)'
+        }}>
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '15px'
+            }}>
+                <select 
+                    value={period}
+                    onChange={(e) => setPeriod(e.target.value)}
+                    style={{
+                        backgroundColor: 'transparent',
+                        color: 'var(--theme-chart-scale-color)',
+                        border: '1px solid',
+                        borderColor: 'var(--theme-chart-border-color)',
+                        borderRadius: '4px',
+                        padding: '4px 8px',
+                        fontSize: '12px',
+                        outline: 'none',
+                        width: 'fit-content'
+                    }}
+                >
+                    {PERIOD_OPTIONS.map(option => (
+                        <option key={option} value={option} style={{
+                            backgroundColor: 'var(--theme-chart-bg-color)',
+                            color: 'var(--theme-chart-scale-color)'
+                        }}>
+                            {t(`periods.${option}`)}
+                        </option>
+                    ))}
+                </select>
+            </div>
+            
+            <div style={{
+                flex: 1
+            }}></div>
+        </div>
         <svg ref={SVGRef} width={w} height={h*0.85+50} 
             style={{
                 userSelect: 'none',
@@ -443,7 +441,7 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
     </div>;
 });
 
-const Container = memo(function ContainerImpl({ data }: { data: CandleStickChartData }) {
+const Container = memo(function ContainerImpl({ data }: { data: MarketData }) {
     const containerRef = useRef<HTMLDivElement>(null);
     const [dimensions, setDimensions] = useState({w: 0, h: 0});
 
@@ -484,6 +482,7 @@ const Container = memo(function ContainerImpl({ data }: { data: CandleStickChart
     </div>;
 });
 
-export default function CandleStickChart({ data }: { data: CandleStickChartData }) {
-    return <Container data={data}></Container>;
+export default function CandleStickChart({ data }: { data: {fields: string[], data: Array<Array<string|number>>} }) {
+    const marketData = useMemo(() => new MarketData(data), [data]);
+    return <Container data={marketData}></Container>;
 }

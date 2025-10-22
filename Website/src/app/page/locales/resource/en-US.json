@@ -62,6 +62,21 @@
         "notice": "Notice: Click the options in the sidebar for more detailed information.",
         "loading": "Loading...",
         "no_data": "No data available",
-        "fetch_failed": "Failed to fetch data"
+        "fetch_failed": "Failed to fetch data",
+        "periods": {
+            "1min": "1 minute",
+            "3min": "3 minutes",
+            "5min": "5 minutes",
+            "10min": "10 minutes",
+            "15min": "15 minutes",
+            "30min": "30 minutes",
+            "60min": "60 minutes",
+            "1day": "1 day",
+            "3day": "3 days",
+            "1week": "1 week",
+            "1month": "1 month",
+            "1quarter": "1 quarter",
+            "1year": "1 year"
+        }
     }
 }
