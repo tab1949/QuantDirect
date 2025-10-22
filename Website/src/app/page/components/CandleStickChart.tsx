@@ -244,6 +244,7 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
     const [aimPos, setAimPos] = useState({x: 0, y: 0});
     const [dragging, setDragging] = useState(false);
     const [oldPos, setOldPos] = useState({x: 0, y: 0});
+    const animationFrameRef = useRef<number | null>(null);
 
     const aim = useMemo(() => {
         const ret: ReactElement[] = [];
@@ -281,15 +282,14 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
     }, [displayAim, aimPos.x, aimPos.y, w, h, offsetX, displayRange.begin, displayRange.end, chart.fontSize, chart.data.high, chart.data.low, data, dataIndex, t]);
 
     const clickTimer = useRef<NodeJS.Timeout>(null);
-    const movingDebounceTimer = useRef<NodeJS.Timeout>(null);
 
     const onPointerDown: PointerEventHandler<SVGSVGElement> = useCallback((e) => {
         if (SVGRef.current === null)
             return;
         const rect = SVGRef.current.getBoundingClientRect();
-        setOldPos({x: e.clientX - rect.x, y: e.clientY - rect.y})
+        setOldPos({x: e.clientX - rect.x, y: e.clientY - rect.y});
+        setDragging(true);
         clickTimer.current = setTimeout(() => {
-            setDragging(true);
             clickTimer.current = null;
         }, 200);
     }, []);
@@ -315,8 +315,6 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
     }, [displayAim, h, offsetX]); 
 
     const onPointerMove: PointerEventHandler<SVGSVGElement> = useCallback((e) => {
-        if (movingDebounceTimer.current)
-            return;
         if (SVGRef.current === null)
             return;
         const rect = SVGRef.current.getBoundingClientRect();
@@ -331,34 +329,48 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
             });
         }
         else if (dragging) {
-            requestAnimationFrame(() => {
-                let delta = (x - oldPos.x) / ((w - offsetX) / (displayRange.end - displayRange.begin + 1));
-                delta *= 1.0; // sensitivity
-                if (delta < 0) delta = Math.floor(delta);
-                else delta = Math.ceil(delta);
+            if (animationFrameRef.current !== null) {
+                cancelAnimationFrame(animationFrameRef.current);
+            }
+            
+            animationFrameRef.current = requestAnimationFrame(() => {
+                const pixelDelta = x - oldPos.x;
+
+                const displayCount = displayRange.end - displayRange.begin + 1;
+                const pixelPerDataPoint = (w - offsetX) / displayCount;
+                
+                const delta = pixelDelta / pixelPerDataPoint;
+                
                 let newBegin = displayRange.begin - delta;
                 let newEnd = displayRange.end - delta;
+                
                 if (newBegin < 0) {
-                    newEnd = displayRange.end - displayRange.begin;
+                    const rangeLength = displayRange.end - displayRange.begin;
                     newBegin = 0;
+                    newEnd = Math.min(data.length - 1, rangeLength);
                 } else if (newEnd >= data.length) {
-                    newBegin = displayRange.begin + (data.length - 1 - displayRange.end);
+                    const rangeLength = displayRange.end - displayRange.begin;
                     newEnd = data.length - 1;
+                    newBegin = Math.max(0, data.length - 1 - rangeLength);
                 }
+                
                 if (newBegin <= newEnd && newBegin >= 0 && newEnd < data.length) {
-                    setDisplayRange({begin: newBegin, end: newEnd});
+                    setDisplayRange({begin: Math.round(newBegin), end: Math.round(newEnd)});
                 }
+                
                 setOldPos({x: x, y: y});
+                animationFrameRef.current = null;
             });
         }
-        movingDebounceTimer.current = setTimeout(() => {
-            movingDebounceTimer.current = null;
-        }, 20);
     }, [displayAim, dragging, oldPos.x, displayRange.begin, displayRange.end, offsetX, w, h, data.length]); 
 
     const onPointerOut = useCallback(() => {
         if (dragging)
             setDragging(false);
+        if (animationFrameRef.current !== null) {
+            cancelAnimationFrame(animationFrameRef.current);
+            animationFrameRef.current = null;
+        }
     }, [dragging]);
 
     const zoom = useCallback((delta: number, x: number) => {
