@@ -15,11 +15,15 @@ export async function updateFuturesContractList(redis: RedisService, config: any
     let listDate = currentDate;
     logger.info("------- Tradable Lists Update --------");
     const redisDataVer = await redis.getUpdateTime();
+    const jsonDataVer = Backup.GetUpdateTime(backup_d);
+    logger.info(`Redis data status: ${redisDataVer?redisDataVer:'NOT FOUND'}`);
+    logger.info(`Backup data status: ${jsonDataVer?jsonDataVer:'NOT FOUND'}`);
     if (!Backup.CheckBackupIntegrity(backup_d)) {
         logger.warn(`Backup directory integrity check failed, attempt to fix ...`);
         Backup.CreateBackupDirectory(backup_d);
         // Make up json files from Redis database
         if (redisDataVer && redisDataVer >= currentDate) {
+            // Redis up-to-date, but missing json
             logger.info("Fixed backup files using data in Redis");
             for (const e of exchanges) {
                 const list = await redis.getContractList(e);
@@ -28,21 +32,24 @@ export async function updateFuturesContractList(redis: RedisService, config: any
                     const temp = await redis.getContractInfo(i);
                     info.push(temp);
                 }
-                Backup.CreateFuturesContractList(backup_d, e, JSON.stringify({fileds: ["ts_code","symbol","exchange","name","fut_code","multiplier","trade_unit","per_unit","quote_unit","quote_unit_desc","d_mode_desc","list_date","delist_date","d_month","trade_time_desc"], items: info}))
+                Backup.CreateFuturesContractList(backup_d, e, JSON.stringify({fields: ["ts_code","symbol","exchange","name","fut_code","multiplier","trade_unit","per_unit","quote_unit","quote_unit_desc","d_mode_desc","list_date","delist_date","d_month","trade_time_desc"], items: info}))
             }
             Backup.SetUpdateTime(backup_d, currentDate);
             exchanges = []; // Skip data fetching loop
         }
-        else {
-            logger.info("Both Redis and Backup are empty. Attempt to fetch history data...");
+        else { 
+            logger.info("Empty backup, and redis outdated. Attempt to fetch history data...");
             await redis.flush();
             listDate = ""; // Fetch entire list
         }
     } 
-    else if (redisDataVer === null || Backup.GetUpdateTime(backup_d) > redisDataVer) {
-        if (Backup.GetUpdateTime(backup_d) >= currentDate) {
-            // Local backup is up-to-date but Redis is empty
-            logger.warn("Redis is empty or out-of-date, but backup files is up-to-date.");
+    else if (redisDataVer === null || jsonDataVer > redisDataVer) {
+        // /\ 
+        // Redis outdated or json is newer
+
+        if (jsonDataVer >= currentDate) {
+            // Json is up-to-date
+            logger.warn("Redis is empty or outdated, but backup files is up-to-date.");
             logger.log("Loading data from backup into Redis...");
             await redis.flush();
             // Load from json file
@@ -54,10 +61,17 @@ export async function updateFuturesContractList(redis: RedisService, config: any
             exchanges = []; // Skip data fetching loop
         }
     }
-    if (listDate == currentDate && Backup.GetUpdateTime(backup_d) == currentDate && redisDataVer) {
-        logger.info("Local data is up-tp-date. No need to fetch from internet.");
-        logger.info("------- Tradable Lists Update Finished --------");
-        return;
+    if (jsonDataVer && redisDataVer) {
+        // No need to update && JSON up-to-date && Redis up-tu-date
+        // \/
+        if (listDate == currentDate && jsonDataVer >= currentDate && redisDataVer >= currentDate) {
+            logger.info("Local data is up-tp-date. No need to fetch from internet.");
+            logger.info("------- Tradable Lists Update Finished --------");
+            return;
+        }
+        else { // Update needed, but no need to fetch all history data
+            listDate = jsonDataVer < redisDataVer ? jsonDataVer : redisDataVer;
+        }
     }
     for (const exchange of exchanges) {
         try {
