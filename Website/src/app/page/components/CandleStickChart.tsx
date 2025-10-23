@@ -245,7 +245,7 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
 
     const clickTimer = useRef<NodeJS.Timeout>(null);
 
-    const onPointerDown: PointerEventHandler<SVGSVGElement> = useCallback((e) => {
+    const onPointerDown: PointerEventHandler<HTMLDivElement> = useCallback((e) => {
         if (SVGRef.current === null)
             return;
         const rect = SVGRef.current.getBoundingClientRect();
@@ -256,7 +256,7 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
         }, 200);
     }, []);
 
-    const onPointerUp: PointerEventHandler<SVGSVGElement> = useCallback((e) => {
+    const onPointerUp: PointerEventHandler<HTMLDivElement> = useCallback((e) => {
         setDragging(false);
         if (clickTimer.current === null) {
             return;
@@ -276,7 +276,7 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
         setAimPos({x: x, y: y});
     }, [displayAim, h, offsetX]); 
 
-    const onPointerMove: PointerEventHandler<SVGSVGElement> = useCallback((e) => {
+    const onPointerMove: PointerEventHandler<HTMLDivElement> = useCallback((e) => {
         if (SVGRef.current === null)
             return;
         const rect = SVGRef.current.getBoundingClientRect();
@@ -366,7 +366,7 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
         setDisplayRange({begin: new_begin, end: new_end});
     }, [displayRange.begin, displayRange.end, offsetX, w, data.length]);
 
-    const onWheel: WheelEventHandler<SVGSVGElement> = useCallback((e) => {
+    const onWheel: WheelEventHandler<HTMLDivElement> = useCallback((e) => {
         if (SVGRef.current === null)
             return;
         e.preventDefault();
@@ -377,7 +377,12 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
         });
     }, [zoom]);
 
-    return <div>
+    return <div 
+    onPointerDown={onPointerDown} 
+    onPointerMove={onPointerMove} 
+    onPointerUp={onPointerUp} 
+    onPointerOut={onPointerOut} onPointerCancel={onPointerOut}
+    onWheel={onWheel}>
         <div style={{
             position: 'relative',
             height: `${CHART_TOP_OFFSET}px`,
@@ -402,12 +407,12 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
                         border: '1px solid',
                         borderColor: 'var(--theme-chart-border-color)',
                         borderRadius: '4px',
-                        padding: '4px 8px',
-                        fontSize: '12px',
+                        paddingLeft: '0.1rem',
+                        fontSize: '0.7rem',
                         outline: 'none',
-                        width: 'fit-content'
-                    }}
-                >
+                        width: 'fit-content',
+                        height: '1.5rem'
+                    }}>
                     {PERIOD_OPTIONS.map(option => (
                         <option key={option} value={option} style={{
                             backgroundColor: 'var(--theme-chart-bg-color)',
@@ -430,12 +435,7 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
                 left: 0,
                 top: 0,
                 backgroundColor: 'transparent'
-            }} 
-            onPointerDown={onPointerDown} 
-            onPointerMove={onPointerMove} 
-            onPointerUp={onPointerUp} 
-            onPointerOut={onPointerOut} onPointerCancel={onPointerOut}
-            onWheel={onWheel}>
+            }} >
             {xScale}
             {yScale}
             {sticks}

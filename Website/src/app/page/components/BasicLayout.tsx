@@ -175,18 +175,18 @@ export const Title3 = styled.div`
 
 export const InlineT1 = styled.span`
   color: var(--theme-font-color-content);
-  font-size: calc(2vmin + 33px);
+  font-size: 2.3rem;
   width: auto;
   margin: 5px;
 `;
 
 export const InlineT2 = styled(InlineT1)`
-  font-size: calc(2vmin + 21px);
+  font-size: 2.1rem;
   margin: 3px;
 `;
 
 export const InlineT3 = styled(InlineT2)`
-  font-size: calc(2vmin + 17px);
+  font-size: 1.3rem;
 `;
 
 export const ScrollList = styled.div`

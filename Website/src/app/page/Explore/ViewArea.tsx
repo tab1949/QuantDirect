@@ -13,7 +13,7 @@ interface ViewAreaProps {
 }
 
 const SubjectListItem = styled(ListItem)`
-    font-size: 19px;
+    font-size: 1.2rem;
     padding: 5px;
 `;
 
@@ -21,16 +21,17 @@ const ContractListItem = styled(ListItem)`
     display: flex;
     flex-direction: column;
     align-items: start;
-    font-size: 17px;
+    font-size: 1.1rem;
     height: 70px;
     padding: 3px;
 `;
 
 const ContractInfoItem = styled(ListItem)`
-    font-size: 21px;
+    font-size: 1.2rem;
     margin-top: 2px;
     margin-bottom: 5px;
-    margin-left: 10px;
+    margin-left: 0;
+    padding-left: 0.65rem;
     align-content: end;
 `;
 
@@ -60,7 +61,9 @@ function FuturesContent({ exchange }: FuturesContentProps) {
         try {
             setLoading(true);
             setError(null);
-            setAssets((await FetchData.GetSubjectAssets(exchange)) || []);
+            setAssets(
+                ((await FetchData.GetSubjectAssets(exchange)) || [])
+                    .sort((a, b) => a.name.localeCompare(b.name, 'zh-CN-u-co-pinyin')));
             contractList.current = (await FetchData.GetContractsList(exchange)) || [];
         } catch (err) {
             setError(`${t('fetch_failed')}: ${err}`);
@@ -143,8 +146,7 @@ function FuturesContent({ exchange }: FuturesContentProps) {
             padding: "10px"
         }}>
             <div style={{
-                width: "10%",
-                minWidth: "100px",
+                minWidth: "5rem",
                 height: "100%",
                 borderRadius: "8px",
                 border: "2px solid var(--theme-border-color)",
@@ -171,9 +173,8 @@ function FuturesContent({ exchange }: FuturesContentProps) {
                 flexDirection: 'column',
                 position: 'relative',
                 height: "100%",
-                width: '9%',
-                minWidth: "90px",
-                fontSize: '19px',
+                minWidth: "6.9rem",
+                fontSize: '1rem',
                 border: "2px solid var(--theme-border-color)",
                 borderRadius: "8px",
                 backgroundColor: "transparent"
@@ -184,7 +185,7 @@ function FuturesContent({ exchange }: FuturesContentProps) {
                     margin: '3px'
                 }}>
                     <ScrollList>
-                        <InlineT3 style={{fontSize:'19px'}}>{t('sort')}{':'}</InlineT3>
+                        <InlineT3 style={{fontSize:'1.2rem'}}>{t('sort')}{':'}</InlineT3>
                         <ListItem style={{margin: '3px', width: '90%'}} onClick={optionClicked}>{t('all_contracts')}{sortOpt == 0? " √": ''}</ListItem>
                     </ScrollList>
                 </div>
@@ -192,7 +193,7 @@ function FuturesContent({ exchange }: FuturesContentProps) {
                     {contracts.map((contract, index) => (
                         <ContractListItem key={`${contract.code}-${index}`} onClick={() => {setSelectedContract(contract);}}>
                             <div>{contract.name}</div>
-                            <div style={{fontSize: '15px'}}>{contract.symbol}</div>
+                            <div style={{fontSize: '0.8rem'}}>{contract.symbol}</div>
                         </ContractListItem>
                     ))}
                 </ScrollList>
@@ -213,8 +214,8 @@ function FuturesContent({ exchange }: FuturesContentProps) {
                 <Div style={{
                     display: 'flex',
                     flexDirection: 'column',
-                    width: '150px',
-                    fontSize: '15px',
+                    width: '8.7rem',
+                    fontSize: '0.85rem',
                     border: "2px solid var(--theme-border-color)",
                     borderRadius: "8px",
                     margin: '3px'}}>
@@ -227,7 +228,6 @@ function FuturesContent({ exchange }: FuturesContentProps) {
                 }}>
                     <CandleStickChart data={data}></CandleStickChart>
                 </Div>: <Title1>{t('no_data')}</Title1>}
-                {/* <CandleStickChart $dark={true} $data={FetchData.GetContractData()}/> */}
             </div>
         </div>
     );
@@ -300,7 +300,7 @@ export default function ViewArea(props: ViewAreaProps) {
         userSelect: "none",
         backgroundColor: "transparent",
         position: "relative",
-        width: "calc(95vw - 100px)",
+        width: "calc(100vw - 10rem)",
         height: "100%",
         color: "white",
         display: "flex",

@@ -27,7 +27,6 @@ export const PERIOD_OPTIONS = [
 // Set wider ranges to avoid special conditions
 const NIGHT_BEGIN_HOUR: number = 21;
 const DAY_BEGIN_HOUR = 8; 
-const DAY_END_HOUR = 16;
 
 export class StaticMarketData {
     private dataMin: CandleStickChartData[];

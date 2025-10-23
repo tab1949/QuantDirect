@@ -36,7 +36,7 @@ export default function TimeDisplay(props: TimeDisplayProps) {
             alignItems: 'center',
         }}>
         <InlineT2>{props.$title}</InlineT2>
-        <InlineT3 style={{fontSize: 'calc(1vmin + 11px)', marginLeft: 'auto'}}>{t('now')}{` ${currentDate}`}{' (UTC+8) '}</InlineT3>
+        <InlineT3 style={{marginLeft: 'auto'}}>{t('now')}{' (UTC+8) '}{` ${currentDate}`}</InlineT3>
         <InlineT2>{currentTime}</InlineT2>
     </div>;
 }
