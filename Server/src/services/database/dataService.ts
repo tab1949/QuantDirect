@@ -100,8 +100,8 @@ export class DataService {
                 this.updateIntervalDay = setInterval(() => {
                     this.worker?.postMessage('check-updates-lists');
                 }, 3_600_000 * 24);
-            }, 3_600_000 * 24 - (Date.now() % (3_600_000 * 24))); // Align to midnight
-            
+            // Align to UTC+8 midnight
+            }, 3_600_000 * 24 - ((Date.now() + 8 * 60 * 60 * 1000) % (3_600_000 * 24)));
         } catch (error) {
             logger.error('Failed to start data service:', error);
             throw error;

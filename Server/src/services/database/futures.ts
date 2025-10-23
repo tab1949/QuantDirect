@@ -11,7 +11,7 @@ export async function updateFuturesContractList(redis: RedisService, config: any
     let requestData = getRequestData(config.upstream, DataType.FUTURES_LIST);
 
     const backup_d: string = config.upstream.backup_dir;
-    const currentDate = new Date().toISOString().slice(0,10).replace(/-/g, '');
+    const currentDate = (new Date((new Date()).getTime() + 8 * 60 * 60 * 1000)).toISOString().slice(0,10).replace(/-/g, '');
     let listDate = currentDate;
     logger.info("------- Tradable Lists Update --------");
     const redisDataVer = await redis.getUpdateTime();
