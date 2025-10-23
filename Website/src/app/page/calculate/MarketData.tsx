@@ -1,30 +1,10 @@
+export interface ArrayedData {
+    fields: string[], 
+    data: Array<Array<string|number>>
+};
+
 export interface CandleStickChartData {
-    data: {
-        time: string[];
-        open: number[];
-        close: number[];
-        high: number[];
-        low: number[];
-        volume: number[];
-        amount: number[];
-        open_interest: number[];
-    },
-    length: number;
-}
-
-function CandleStickChartData(): CandleStickChartData {
-    return {
-        data: {
-            time: [], 
-            open: [], close: [], high: [], low: [],
-            volume: [], amount: [], open_interest: []
-        }, 
-        length: 0
-    };
-}
-
-interface FuturesIndexMap {
-    time: number; 
+    time: string;
     open: number;
     close: number;
     high: number;
@@ -32,7 +12,11 @@ interface FuturesIndexMap {
     volume: number;
     amount: number;
     open_interest: number;
-}
+};
+
+function CandleStickChartData(): CandleStickChartData[] {
+    return [];
+};
 
 export const PERIOD_OPTIONS = [
     '1min', '3min', '5min', '15min', 
@@ -40,16 +24,20 @@ export const PERIOD_OPTIONS = [
     '1day', '3day', '1week', '1month', '1quarter', '1year'
 ];
 
-export class MarketData {
-    private dataMin: CandleStickChartData;
-    private dataDay: CandleStickChartData;
+// Set wider ranges to avoid special conditions
+const NIGHT_BEGIN_HOUR: number = 21;
+const DAY_BEGIN_HOUR = 8; 
+const DAY_END_HOUR = 16;
 
-    constructor(data: {fields: string[], data: Array<Array<string|number>>}) {
+export class StaticMarketData {
+    private dataMin: CandleStickChartData[];
+    private dataDay: CandleStickChartData[];
+
+    constructor(data: ArrayedData) {
         this.dataMin = CandleStickChartData();
-        this.dataMin.length = data.data.length;
         this.dataDay = CandleStickChartData();
         
-        const index: FuturesIndexMap = {
+        const index = {
             time: -1,
             open: -1,
             close: -1,
@@ -88,126 +76,113 @@ export class MarketData {
             }
         });
         data.data.forEach((v: Array<string|number>) => {
-            this.dataMin.data.time.push(v[index.time] as string);
-            this.dataMin.data.open.push(v[index.open] as number);
-            this.dataMin.data.close.push(v[index.close] as number);
-            this.dataMin.data.high.push(v[index.high] as number);
-            this.dataMin.data.low.push(v[index.low] as number);
-            this.dataMin.data.volume.push(v[index.volume] as number);
-            this.dataMin.data.amount.push(v[index.amount] as number);
+            this.dataMin.push({
+                time: v[index.time] as string,
+                open: v[index.open] as number,
+                close: v[index.close] as number,
+                high: v[index.high] as number,
+                low: v[index.low] as number,
+                volume: v[index.volume] as number,
+                amount: v[index.amount] as number,
+                open_interest: 0
+            });
         });
         if (index.open_interest !== -1) { // Only if open_interest is available
-            data.data.forEach((v: Array<string|number>) => {
-                this.dataMin.data.open_interest.push(v[index.open_interest] as number);
+            data.data.forEach((v: Array<string|number>, i: number) => {
+                this.dataMin[i].open_interest = v[index.open_interest] as number;
             });
         }
         
-        this.aggregateToDay();  // 移动到这里，数据填充后调用
+        this.aggregateToDay();
     }
 
-    public getData(period: string): CandleStickChartData {
+    public getData(period: string): CandleStickChartData[] {
         if (period === '1min')
             return this.dataMin;
         if (period === '1day') 
             return this.dataDay;
         
-        const ret = CandleStickChartData();
-        
+        return [];
+    }
+
+    // only invoked in constructor
+    private aggregateToDay(): void {
+        if (this.hasNightSession()) {
+            const tradingDays: string[] = [];
+            for (let i = 0; i < this.dataMin.length; ++i) {
+                const date = new Date(this.dataMin[i].time);
+                if (date.getHours() >= DAY_BEGIN_HOUR && date.getHours() < NIGHT_BEGIN_HOUR) {
+                    tradingDays.push(`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`);
+                }
+                else {
+                    tradingDays.push('');
+                }
+            }
+            let date: string = this.dataMin[this.dataMin.length - 1].time.split(' ')[0];
+            for (let i = this.dataMin.length - 1; i >= 0; --i) {
+                if (tradingDays[i] !== '')
+                    date = tradingDays[i];
+                else
+                    tradingDays[i] = date;
+            }
+            let begin = 0;
+            let lastDate = tradingDays[0];
+            for (let i = 0; i < tradingDays.length; ++i) {
+                if (tradingDays[i] != lastDate) {
+                    this.dataDay.push(this.aggregate(this.dataMin, begin, i - 1, lastDate));
+                    begin = i;
+                }
+                lastDate = tradingDays[i];
+            }
+            if (lastDate !== tradingDays[tradingDays.length - 2])
+                this.dataDay.push(this.aggregate(this.dataMin, begin, this.dataMin.length - 1, lastDate));
+            return;
+        }
+        let begin = 0;
+        let lastDate = new Date(this.dataMin[0].time);
+        for (let i = 0; i < this.dataMin.length; ++i) {
+            const currentDate = new Date(this.dataMin[i].time);
+            if (currentDate.getDate() != lastDate.getDate()) {
+                this.dataDay.push(this.aggregate(this.dataMin, begin, i - 1, lastDate.toISOString().split('T')[0]));
+                begin = i;
+            }
+            lastDate = currentDate;
+        }
+
+    }
+
+    private hasNightSession(): boolean {
+        if (this.dataMin.length <= 0)
+            return false;
+        let ret: boolean = false;
+        for (let i = 1; i < this.dataMin.length; ++i) {
+            const currentHour = (new Date(this.dataMin[i].time)).getHours();
+            if (currentHour >= NIGHT_BEGIN_HOUR || currentHour < DAY_BEGIN_HOUR) {
+                ret = true;
+                break;
+            }
+        }
         return ret;
     }
 
-    private aggregateToDay(): void {
-        const hasOI = this.dataMin.data.open_interest.length > 0;
-
-        if (this.dataMin.length === 0)
-            return;
-
-        let currentDay: string | null = null;
-        let currentOpen: number = 0;
-        let currentHigh: number = 0;
-        let currentLow: number = Infinity;
-        let currentClose: number = 0;
-        let currentVolume: number = 0;
-        let currentAmount: number = 0;
-        let currentOI: number = 0;
-
-        for (let i = 0; i < this.dataMin.length; i++) {
-            const timeStr = this.dataMin.data.time[i];
-            const date = new Date(timeStr);
-
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            let tradingDay = `${year}-${month}-${day}`;
-
-            const hours = date.getHours();
-            if (hours >= 21) {
-                const nextDate = new Date(date);
-                nextDate.setDate(nextDate.getDate() + 1);
-                const nextYear = nextDate.getFullYear();
-                const nextMonth = String(nextDate.getMonth() + 1).padStart(2, '0');
-                const nextDay = String(nextDate.getDate()).padStart(2, '0');
-                tradingDay = `${nextYear}-${nextMonth}-${nextDay}`;
-            }
-
-            if (currentDay !== null && currentDay !== tradingDay) {
-                this.dataDay.data.time.push(currentDay);
-                this.dataDay.data.open.push(currentOpen);
-                this.dataDay.data.close.push(currentClose);
-                this.dataDay.data.high.push(currentHigh);
-                this.dataDay.data.low.push(currentLow);
-                this.dataDay.data.volume.push(currentVolume);
-                this.dataDay.data.amount.push(currentAmount);
-                if (hasOI) {
-                    this.dataDay.data.open_interest.push(currentOI);
-                }
-                this.dataDay.length++;
-
-                currentHigh = this.dataMin.data.high[i];
-                currentLow = this.dataMin.data.low[i];
-                currentOpen = this.dataMin.data.open[i];
-                currentClose = this.dataMin.data.close[i];
-                currentVolume = this.dataMin.data.volume[i];
-                currentAmount = this.dataMin.data.amount[i];
-                currentOI = hasOI ? this.dataMin.data.open_interest[i] : 0;
-                currentDay = tradingDay;
-            } 
-            else {
-                currentHigh = Math.max(currentHigh, this.dataMin.data.high[i]);
-                currentLow = Math.min(currentLow, this.dataMin.data.low[i]);
-                currentClose = this.dataMin.data.close[i];
-                currentVolume += this.dataMin.data.volume[i];
-                currentAmount += this.dataMin.data.amount[i];
-                if (hasOI) {
-                    currentOI = this.dataMin.data.open_interest[i];
-                }
-
-                if (currentDay === null) {
-                    currentDay = tradingDay;
-                    currentOpen = this.dataMin.data.open[i];
-                    currentHigh = this.dataMin.data.high[i];
-                    currentLow = this.dataMin.data.low[i];
-                    currentClose = this.dataMin.data.close[i];
-                    currentVolume = this.dataMin.data.volume[i];
-                    currentAmount = this.dataMin.data.amount[i];
-                    currentOI = hasOI ? this.dataMin.data.open_interest[i] : 0;
-                }
-            }
+    private aggregate(data: CandleStickChartData[], begin: number, end: number, time: string): CandleStickChartData {
+        const ret: CandleStickChartData = {
+            time: time,
+            open: data[begin].open,
+            close: data[end].close,
+            high: data[begin].high,
+            low: data[begin].low,
+            volume: 0,
+            amount: 0,
+            open_interest: data[end].open_interest
+        };
+        for (let i = begin; i <= end; i++) {
+            ret.volume += data[i].volume;
+            ret.amount += data[i].amount;
+            if (data[i].high > ret.high) ret.high = data[i].high;
+            if (data[i].low < ret.low) ret.low = data[i].low;
         }
-
-        if (currentDay !== null) {
-            this.dataDay.data.time.push(currentDay);
-            this.dataDay.data.open.push(currentOpen);
-            this.dataDay.data.close.push(currentClose);
-            this.dataDay.data.high.push(currentHigh);
-            this.dataDay.data.low.push(currentLow);
-            this.dataDay.data.volume.push(currentVolume);
-            this.dataDay.data.amount.push(currentAmount);
-            if (hasOI) {
-                this.dataDay.data.open_interest.push(currentOI);
-            }
-            this.dataDay.length++;
-        }
+        return ret;
     }
     
 }

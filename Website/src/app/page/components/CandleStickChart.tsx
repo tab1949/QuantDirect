@@ -1,19 +1,22 @@
 import { useState, useEffect, useRef, useCallback, useMemo, ReactElement, PointerEventHandler, WheelEventHandler, memo } from "react";
 import { useTranslation } from "react-i18next";
 
-import { MarketData, CandleStickChartData, PERIOD_OPTIONS } from '../calculate/MarketData';
+import { StaticMarketData, CandleStickChartData, PERIOD_OPTIONS } from '../calculate/MarketData';
 
 interface ContentInterface {
     $w: number,
     $h: number,
-    $data: MarketData
+    $data: StaticMarketData
 };
 
-const validateChartData = (data: CandleStickChartData, displayRange: {begin: number, end: number}) => {
+const validateChartData = (data: CandleStickChartData[], displayRange: {begin: number, end: number}) => {
     if (!data || data.length === 0) return false;
-    if (displayRange.begin < 0 || displayRange.end < 0) return false;
-    if (displayRange.begin >= data.length || displayRange.end >= data.length) return false;
-    if (displayRange.begin > displayRange.end) return false;
+    if (displayRange.begin < 0 || 
+        displayRange.end < 0 || 
+        displayRange.begin >= data.length || 
+        displayRange.end >= data.length ||
+        displayRange.begin > displayRange.end) 
+        return false;
     return true;
 };
 
@@ -26,7 +29,7 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
     const yScaleCount = 4;
     const [displayRange, setDisplayRange] = useState({begin: 0, end: 0});
     const [period, setPeriod] = useState('1min');
-    const data = useMemo(() => param.$data.getData(period), [param.$data, period]);
+    const data = useMemo<CandleStickChartData[]>(() => param.$data.getData(period), [param.$data, period]);
     const w = param.$w;
     const h = param.$h;
 
@@ -63,14 +66,14 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
             };
         }
 
-        let high = data.data.high[displayRange.begin];
+        let high = data[displayRange.begin].high;
         let low = high;
         const yScaleValue: Array<number> = [];
         for (let i = displayRange.begin; i <= displayRange.end; ++i) {
-            if (!data.data.high[i] || !data.data.low[i]) continue; // Only check data existence
+            if (!data[i].high || !data[i].low) continue; // Only check data existence
 
-            const highVal = data.data.high[i];
-            const lowVal = data.data.low[i];
+            const highVal = data[i].high;
+            const lowVal = data[i].low;
             
             if (highVal > high) high = highVal;
             if (lowVal < low) low = lowVal;
@@ -153,13 +156,13 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
         const mainTickLength = Math.min(20, bottomSpace * 0.5);
         const labelY = y + mainTickLength + 11;
         for (let i = 0, k = displayRange.begin; i < displayCount; ++i, ++ k) {
-            if (!data.data.high[k] || !data.data.low[k] || !data.data.open[k] || !data.data.close[k]) continue; // Only check data existence
+            if (!data[k].high || !data[k].low || !data[k].open || !data[k].close) continue; // Only check data existence
             
             const x = offsetX + width * i;
-            const height = unitY * ((data.data.open[k] as number) - (data.data.close[k] as number));
-            const bodyY = CHART_TOP_OFFSET + unitY * (chart.data.high - ((height > 0? data.data.open[k]: data.data.close[k]) as number));
-            const wickY1 = CHART_TOP_OFFSET + unitY * (chart.data.high - (data.data.high[k] as number));
-            const wickY2 = CHART_TOP_OFFSET + unitY * (chart.data.high - (data.data.low[k] as number));
+            const height = unitY * ((data[k].open as number) - (data[k].close as number));
+            const bodyY = CHART_TOP_OFFSET + unitY * (chart.data.high - ((height > 0? data[k].open: data[k].close) as number));
+            const wickY1 = CHART_TOP_OFFSET + unitY * (chart.data.high - (data[k].high as number));
+            const wickY2 = CHART_TOP_OFFSET + unitY * (chart.data.high - (data[k].low as number));
             if (height < 0) { // rise
                 ret.push(<g key={`candle-${i}`}>
                     <rect key={`candle-${i}-body`} x={x-bodyWidth/2} width={bodyWidth} y={bodyY} height={-height} fill="red" stroke="red" strokeWidth={2}/>
@@ -179,8 +182,8 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
                 </g>);
             }            
 
-            if (i % sample == 0 && data.data.time[k]) {
-                const timeStr = data.data.time[k];
+            if (i % sample == 0 && data[k].time) {
+                const timeStr = data[k].time;
                 let text = '?';
                 if (timeStr.includes(' ')) {
                     // YYYY-MM-DD HH:mm:SS -> HH:mm
@@ -226,14 +229,14 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
         if (stickIndex < 0) stickIndex = 0;
         else if (stickIndex >= data.length) stickIndex = data.length - 1;
         const info = [
-            data.data.time[stickIndex].replace(/:\d\d$/, ''), 
-            data.data.open[stickIndex], 
-            data.data.close[stickIndex], 
-            data.data.high[stickIndex], 
-            data.data.low[stickIndex], 
-            data.data.volume[stickIndex], 
-            data.data.amount[stickIndex], 
-            data.data.open_interest[stickIndex]];
+            data[stickIndex].time.replace(/:\d\d$/, ''), 
+            data[stickIndex].open, 
+            data[stickIndex].close, 
+            data[stickIndex].high, 
+            data[stickIndex].low, 
+            data[stickIndex].volume, 
+            data[stickIndex].amount, 
+            data[stickIndex].open_interest];
         for(let i = 0; i < 8; i++) {
           ret.push(<text key={`aim-info-text-${i}`} x={infoX + 5} y={CHART_TOP_OFFSET - 5 + i * chart.fontSize * 1.2} fontSize={chart.fontSize} fill="var(--theme-chart-scale-color)">{`${t(`data_fields.${AIM_INFO_FIELDS[i]}`)}: ${info[i]}`}</text>);
         }   
@@ -441,7 +444,7 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
     </div>;
 });
 
-const Container = memo(function ContainerImpl({ data }: { data: MarketData }) {
+const Container = memo(function ContainerImpl({ data }: { data: StaticMarketData }) {
     const containerRef = useRef<HTMLDivElement>(null);
     const [dimensions, setDimensions] = useState({w: 0, h: 0});
 
@@ -483,6 +486,6 @@ const Container = memo(function ContainerImpl({ data }: { data: MarketData }) {
 });
 
 export default function CandleStickChart({ data }: { data: {fields: string[], data: Array<Array<string|number>>} }) {
-    const marketData = useMemo(() => new MarketData(data), [data]);
+    const marketData = useMemo(() => new StaticMarketData(data), [data]);
     return <Container data={marketData}></Container>;
 }
