@@ -1,5 +1,4 @@
 import styled from "styled-components";
-import * as Animation from "../Animation";
 import * as Basic from "../components/BasicLayout";
 
 const SideBarContainer = styled.div<{$darkMode: boolean}>`

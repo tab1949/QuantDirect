@@ -155,7 +155,7 @@ export default function BasicLayout() {
             setSettingsL1Opened(false); 
             setSettingsL2Opened(false);
             setSelected(prev => ({ ...prev, settings: false }));}}>
-          {selected.home && <HomePage $darkMode={darkMode}/>}
+          {selected.home && <HomePage/>}
           {selected.explore && <ExplorePage $darkMode={darkMode}/>}
         </CommonBody>
         

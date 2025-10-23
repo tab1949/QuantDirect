@@ -1,12 +1,7 @@
-import styled from "styled-components";
 import { useTranslation } from "react-i18next";
 import { InlineT1 } from "../components/BasicLayout";
 
-interface HomePageProps {
-    $darkMode: boolean;
-}
-
-export default function HomePage(props: HomePageProps) {
+export default function HomePage() {
     const {t} = useTranslation();
     return <div>
         <div style={{
