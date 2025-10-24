@@ -1,55 +1,42 @@
-import { CandleStickChartData } from './MarketData';
+import { CandleStickChartData, Indicator, IndicatorResult, IndicatorDisplay } from "./MarketData";
 
-export enum ResultType {
-    LINE, BAR, POINT, MARK
+function NONE(): Indicator {
+    return new Indicator("", "", [], [], [],  [], "preset", () => {return []});
 }
 
-export class IndicatorResult {
-    public readonly type: ResultType;
+function MA(): Indicator {
+    return new Indicator("MA", "Moving Average", 
+        [5, 10, 30, 60], 
+        ["MA5", "MA10", "MA30", "MA60"],
+        [IndicatorDisplay.LINE, IndicatorDisplay.LINE, IndicatorDisplay.LINE, IndicatorDisplay.LINE], 
+        [{color: '#d025ff', weight: '1'}, {color: '#25afff', weight: '1'}, {color: '#25ffb3', weight: '1'}, {color: '#c1ff25', weight: '1'}],
+        "preset", 
+        (args: CandleStickChartData[], param: number[]): IndicatorResult[] => {
+        const ret: IndicatorResult[] = [];
+        for (let k = 0; k < 4; ++k) {
+            ret.push([]);
+            let sum: number = 0;
+            const duration = param[k];
+            for (let i = 0; i < args.length; ++i) {
+                sum += args[i].close;
+                if (i >= duration) {
+                    sum -= args[i - duration].close;
+                    ret[k].push(sum / duration);
+                }
+                else {
+                    ret[k].push(-1); 
+                }
+            }
+        }
+        return ret;
+    });
+}
 
-    constructor(type: ResultType) {
-        this.type = type;
+export function GetIndicatorByName(name: string): Indicator|undefined {
+    switch(name.toUpperCase()) {
+    case 'MA':
+        return MA();
+    default:
+        return NONE();
     }
-}; // class IndicatorResult
-
-export type CalcFunction = (args: CandleStickChartData[]) => IndicatorResult;
-
-export class IndicatorCalc {
-    private readonly calc: CalcFunction;
-
-    constructor(calc: CalcFunction) {
-        this.calc = calc;
-    }
-
-    public calculate(data: CandleStickChartData[]): void {
-        this.calc(data);
-    }
-}; // class IndicatorCalc
-
-export class Indicator {
-    public readonly name: string;
-    public readonly description?: string;
-    public readonly calc: IndicatorCalc;
-    public readonly inputs: string[];
-    public readonly outputs: string[];
-    public readonly source: 'preset' | 'custom';
-    public readonly category: 'price' | 'volume' | 'momentum' | 'trend' | 'volatility' | 'other';
-
-    constructor(
-        name: string, 
-        calc: IndicatorCalc, 
-        inputs: string[], 
-        outputs: string[], 
-        source: 'preset' | 'custom', 
-        category: 'price' | 'volume' | 'momentum' | 'trend' | 'volatility' | 'other', 
-        description?: string) {
-        this.name = name;
-        this.description = description? description : '';
-        this.calc = calc;
-        this.inputs = inputs;
-        this.outputs = outputs;
-        this.source = source;
-        this.category = category;
-    }
-
-}; // class Indicator
+}

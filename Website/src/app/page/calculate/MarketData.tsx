@@ -1,3 +1,5 @@
+import { JSX } from "react";
+
 export interface ArrayedData {
     fields: string[], 
     data: Array<Array<string|number>>
@@ -185,3 +187,76 @@ export class StaticMarketData {
     }
     
 }
+
+export const INDICATOR_OPTIONS = [
+    'MA', 'EXPMA', 'BOLL'
+];
+
+export enum IndicatorDisplay {
+    NONE, LINE, BAR, POINT, MARK
+};
+
+export interface IndicatorDisplayStyle {
+    color?: string;
+    weight?: string;
+};
+
+export type IndicatorResult = number[];
+
+export type CalcFunction = (args: CandleStickChartData[], param: number[]) => IndicatorResult[];
+
+class IndicatorCalc {
+    private readonly calc: CalcFunction;
+
+    constructor(calc: CalcFunction) {
+        this.calc = calc;
+    }
+
+    public calculate(data: CandleStickChartData[], param: number[]): IndicatorResult[] {
+        return this.calc(data, param);
+    }
+}; // class IndicatorCalc
+
+export class Indicator {
+    public readonly name: string;
+    public readonly description?: string;
+    public readonly calc: IndicatorCalc;
+    public readonly param: number[];
+    public readonly display: IndicatorDisplay[];
+    public readonly style: IndicatorDisplayStyle[];
+    public readonly source: 'preset' | 'custom';
+    public data: IndicatorResult[];
+    public readonly resultDesc: string[];
+
+    constructor(
+        name: string, 
+        description: string,
+        param: number[],
+        resultDesc: string[],
+        display: IndicatorDisplay[], 
+        style: IndicatorDisplayStyle[],
+        source: 'preset' | 'custom',
+        calc: CalcFunction) {
+
+        this.name = name;
+        this.description = description;
+        this.calc = new IndicatorCalc(calc);
+        this.param = param;
+        this.resultDesc = resultDesc;
+        this.display = display;
+        this.style = style;
+        this.source = source;
+        this.data = [];
+    }
+
+    public toString(): string {
+        let ret: string = '';
+        ret = '';
+        return ret;
+    }
+
+    public updateData(data: CandleStickChartData[]) {
+        this.data = this.calc.calculate(data, this.param);
+    }
+
+}; // class Indicator

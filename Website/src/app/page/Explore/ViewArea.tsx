@@ -146,7 +146,7 @@ function FuturesContent({ exchange }: FuturesContentProps) {
             padding: "10px"
         }}>
             <div style={{
-                minWidth: "5rem",
+                width: "7rem",
                 height: "100%",
                 borderRadius: "8px",
                 border: "2px solid var(--theme-border-color)",
