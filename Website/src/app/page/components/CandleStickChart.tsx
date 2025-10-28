@@ -343,6 +343,9 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
         setAimPos({x: clampedX, y: clampedY});
     }, [displayAim, h, offsetX]); 
 
+    const xDelta = useRef(0);
+    const left = useRef(false);
+
     const onPointerMove: PointerEventHandler<HTMLDivElement> = useCallback((e) => {
         if (SVGRef.current === null)
             return;
@@ -358,41 +361,54 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
             });
         }
         else if (dragging) {
+            
+            if (left.current) { // before: left
+                if (x > oldPos.x) { // now: right
+                    left.current = false;
+                    xDelta.current = 0;
+                }
+            }
+            else { // before: right
+                if (x < oldPos.x) {// now: left
+                    left .current = true;
+                    xDelta.current = 0;
+                }
+            }
+            xDelta.current += x - oldPos.x;
+            const displayCount = displayRange.end - displayRange.begin;
+            const pixelPerDataPoint = (w - offsetX) / displayCount;
+            
+            let delta = xDelta.current / pixelPerDataPoint;
+            setOldPos({x: x, y: y});
+
+            if (-1 < delta && delta < 1)
+                return;
+            delta = Math.round(delta);
             if (animationFrameRef.current !== null) {
                 cancelAnimationFrame(animationFrameRef.current);
             }
             
             animationFrameRef.current = requestAnimationFrame(() => {
-                const pixelDelta = x - oldPos.x;
-
-                const displayCount = displayRange.end - displayRange.begin + 1;
-                const pixelPerDataPoint = (w - offsetX) / displayCount;
-                
-                const delta = Math.round(pixelDelta / pixelPerDataPoint);
                 
                 let newBegin = displayRange.begin - delta;
                 let newEnd = displayRange.end - delta;
                 
                 if (newBegin < 0) {
-                    const rangeLength = displayRange.end - displayRange.begin;
                     newBegin = 0;
-                    newEnd = Math.min(data.length - 1, rangeLength);
+                    newEnd = displayCount - 1;
                 } else if (newEnd >= data.length) {
-                    const rangeLength = displayRange.end - displayRange.begin;
                     newEnd = data.length - 1;
-                    newBegin = Math.max(0, data.length - 1 - rangeLength);
+                    newBegin = data.length - displayCount - 1;
                 }
-                if (newBegin <= newEnd && newBegin >= 0 && newEnd < data.length) {
-                    setDisplayRange({begin: newBegin, end: newEnd});
-                }
+                setDisplayRange({begin: newBegin, end: newEnd});
                 
-                setOldPos({x: x, y: y});
+                xDelta.current = 0;
                 animationFrameRef.current = null;
             });
         }
-    }, [displayAim, dragging, oldPos.x, displayRange.begin, displayRange.end, offsetX, w, h, data.length]); 
+    }, [displayAim, dragging, oldPos.x, displayRange.begin, displayRange.end, offsetX, w, h, data.length, xDelta]); 
 
-    const onPointerOut = useCallback(() => {
+    const onPointerLeave = useCallback(() => {
         if (dragging)
             setDragging(false);
         if (animationFrameRef.current !== null) {
@@ -453,7 +469,7 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
     onPointerDown={onPointerDown} 
     onPointerMove={onPointerMove} 
     onPointerUp={onPointerUp} 
-    onPointerOut={onPointerOut} onPointerCancel={onPointerOut}
+    onPointerLeave={onPointerLeave} onPointerCancel={onPointerLeave}
     onWheel={onWheel}>
         <div style={{
             position: 'relative',
