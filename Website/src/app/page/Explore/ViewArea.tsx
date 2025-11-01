@@ -223,7 +223,7 @@ function FuturesContent({ exchange }: FuturesContentProps) {
                 </Div>
                 {data? <Div style={{
                     position: 'relative',
-                    height: '50%',
+                    height: '70%',
                     width: '60%'
                 }}>
                     <CandleStickChart data={data}></CandleStickChart>

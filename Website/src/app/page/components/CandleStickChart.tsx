@@ -22,6 +22,7 @@ const validateChartData = (data: CandleStickChartData[], displayRange: {begin: n
 
 const CHART_HEIGHT_RATIO = 0.8;
 const CHART_TOP_OFFSET = 30;
+const CHART_X_SCALE_OFFSET = 0;
 const AIM_INFO_FIELDS = ['time','open', 'close', 'high', 'low', 'volume', 'amount', 'open_interest'];
 
 const Content = memo(function ContentImpl(param: ContentInterface) {
@@ -98,7 +99,10 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
                     count: yScaleCount,
                     space: (h * CHART_HEIGHT_RATIO) / (yScaleCount - 1),
                     value: yScaleValue
-                } 
+                }, 
+                x: {
+                    
+                }
             },
             data: {
                 max_length: high.toFixed().toString().length,
@@ -112,9 +116,9 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
     const yScale = useMemo(() => {
         const ret: ReactElement[] = [];
         for (let i = 0; i < p.scales.y.count; ++i) {
-            const y = CHART_TOP_OFFSET + i * p.scales.y.space;
+            const y = i * p.scales.y.space;
             ret.push(<line key={`scale-y-line-${i}`} x1={10} x2={w-10} y1={y} y2={y}  stroke={'#808080'} strokeWidth={0.8} strokeDasharray={'5 5'}/>)
-            ret.push(<text key={`scale-y-text-${i}`} x={10} y={y-8} fill={'#808080'} fontSize={p.fontSize}>
+            ret.push(<text key={`scale-y-text-${i}`} x={10} y={y + p.fontSize} fill={'#808080'} fontSize={p.fontSize}>
                 {p.scales.y.value[i].toFixed(2)}
             </text>);
         }
@@ -127,7 +131,7 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
         const space = (w - offsetX) / (displayCount <= 5? displayCount: 20);
         const space2nd = space / 5;
         const scaleCount = (displayCount <= 5? displayCount: 20);
-        const y = h * CHART_HEIGHT_RATIO + 35;
+        const y = h * CHART_HEIGHT_RATIO + CHART_X_SCALE_OFFSET;
         const bottomSpace = h * 0.05 + 15;
         const mainTickLength = Math.min(20, bottomSpace * 0.5);
         const subTickLength = Math.min(10, bottomSpace * 0.3);
@@ -161,51 +165,18 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
         const dataRange = p.data.high - p.data.low;
         const unitY = (dataRange > 0? h * CHART_HEIGHT_RATIO / dataRange: 0);
         const width = (w - offsetX) / displayCount;
-        const bodyWidth = width * 0.5;
+        const bodyWidth = displayCount >= 50 ? width * 0.2 : width * 0.5;
         const sample = (displayCount <= 5? 1: Math.round(displayCount/10));
-        const y = h * CHART_HEIGHT_RATIO + 35;
-        const bottomSpace = h * 0.05 + 15;
-        const mainTickLength = Math.min(20, bottomSpace * 0.5);
-        const labelY = y + mainTickLength + 11;
-        const indicatorProp: {data: string, type: IndicatorDisplay}[] = [];
-        for (const d of indicator.display) {
-            indicatorProp.push({data: '', type: d});
-        }            
-        for (let i = 0, k = displayRange.begin; i < displayCount; ++i, ++ k) {
-            const x = offsetX + width * i;
-            if (k > 0)
-            for (let d = 0; d < indicator.display.length; ++d) {
-                switch(indicatorProp[d].type) {
-                case IndicatorDisplay.LINE:
-                    if (!indicator.data[d] || indicator.data[d][k] == -1)
-                        break;
-                    let lastY = indicator.data[d][k - 1];
-                    let lastX = x - width;
-                    if (lastY == -1) {
-                        lastY = indicator.data[d][k];
-                        lastX = x;
-                    }
-                    indicatorProp[d].data += `M ${lastX} ${unitY*(p.data.high-lastY)+CHART_TOP_OFFSET} L ${x} ${unitY*(p.data.high-indicator.data[d][k])+CHART_TOP_OFFSET} `;
-                default: break;
-                }
-            }
-        }
-        for (let i = 0; i < indicatorProp.length; ++i) {
-            switch (indicatorProp[i].type) {
-            case IndicatorDisplay.LINE:
-                ret.push(<path key={`indicator=${i}`} d={indicatorProp[i].data} stroke={indicator.style[i].color} strokeWidth={indicator.style[i].weight}/>);
-                break;
-            default: break;
-            }
-        }
+        const labelY = h * CHART_HEIGHT_RATIO + 2*p.fontSize + CHART_X_SCALE_OFFSET;
+
         for (let i = 0, k = displayRange.begin; i < displayCount; ++i, ++ k) {
             if (!data[k].high || !data[k].low || !data[k].open || !data[k].close) continue; // Only check data existence
             
             const x = offsetX + width * i;
             const height = unitY * ((data[k].open as number) - (data[k].close as number));
-            const bodyY = CHART_TOP_OFFSET + unitY * (p.data.high - ((height > 0? data[k].open: data[k].close) as number));
-            const wickY1 = CHART_TOP_OFFSET + unitY * (p.data.high - (data[k].high as number));
-            const wickY2 = CHART_TOP_OFFSET + unitY * (p.data.high - (data[k].low as number));
+            const bodyY = unitY * (p.data.high - ((height > 0? data[k].open: data[k].close) as number));
+            const wickY1 = unitY * (p.data.high - (data[k].high as number));
+            const wickY2 = unitY * (p.data.high - (data[k].low as number));
 
             if (height < 0) { // rise
                 ret.push(<g key={`candle-${i}`}>
@@ -242,10 +213,42 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
                 </text>);
             }
         }
+        
+        const indicatorProp: {data: string, type: IndicatorDisplay}[] = [];
+        for (const d of indicator.display) {
+            indicatorProp.push({data: '', type: d});
+        }            
+        for (let i = 0, k = displayRange.begin; i < displayCount; ++i, ++ k) {
+            const x = offsetX + width * i;
+            if (k > 0)
+            for (let d = 0; d < indicator.display.length; ++d) {
+                switch(indicatorProp[d].type) {
+                case IndicatorDisplay.LINE:
+                    if (!indicator.data[d] || indicator.data[d][k] == -1)
+                        break;
+                    let lastY = indicator.data[d][k - 1];
+                    let lastX = x - width;
+                    if (lastY == -1) {
+                        lastY = indicator.data[d][k];
+                        lastX = x;
+                    }
+                    indicatorProp[d].data += `M ${lastX} ${unitY*(p.data.high-lastY)} L ${x} ${unitY*(p.data.high-indicator.data[d][k])} `;
+                default: break;
+                }
+            }
+        }
+        for (let i = 0; i < indicatorProp.length; ++i) {
+            switch (indicatorProp[i].type) {
+            case IndicatorDisplay.LINE:
+                ret.push(<path key={`indicator=${i}`} d={indicatorProp[i].data} stroke={indicator.style[i].color} strokeWidth={indicator.style[i].weight}/>);
+                break;
+            default: break;
+            }
+        }
         return ret;
     }, [data, w, h, p.data.high, p.data.low, p.fontSize, displayRange, offsetX, indicator.data, indicator.display, indicator.style]);
 
-    const SVGRef = useRef<SVGSVGElement>(null);
+    const RootDivRef = useRef<HTMLDivElement>(null);
     const [displayAim, setDisplayAim] = useState(false);
     const [aimPos, setAimPos] = useState({x: 0, y: 0});
     const [dragging, setDragging] = useState(false);
@@ -259,16 +262,16 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
         const stickWidth = (w - offsetX) / (displayRange.end - displayRange.begin + 1);
         let index = Math.round((aimPos.x - offsetX) / stickWidth);
         const x = offsetX + stickWidth * index;
-        const value = p.data.high - (p.data.high - p.data.low) * ((aimPos.y - CHART_TOP_OFFSET) / (h * CHART_HEIGHT_RATIO));
-        ret.push(<line key="aim-x" x1={x} x2={x} y1={CHART_TOP_OFFSET-10} y2={h*0.85+CHART_TOP_OFFSET} stroke={'var(--theme-chart-scale-color)'} strokeWidth={'1px'}/>);
-        ret.push(<line key="aim-y" x1={offsetX-5} x2={w} y1={aimPos.y} y2={aimPos.y} stroke={'var(--theme-chart-scale-color)'} strokeWidth={'1px'}/>);
+        const value = p.data.high - (p.data.high - p.data.low) * (aimPos.y / (h * CHART_HEIGHT_RATIO));
+        ret.push(<line key="aim-v" x1={x} x2={x} y1={0} y2={h*CHART_HEIGHT_RATIO+CHART_X_SCALE_OFFSET} stroke={'var(--theme-chart-scale-color)'} strokeWidth={'1px'}/>);
+        ret.push(<line key="aim-h" x1={offsetX-5} x2={w} y1={aimPos.y} y2={aimPos.y} stroke={'var(--theme-chart-scale-color)'} strokeWidth={'1px'}/>);
         ret.push(<rect key="aim-indicator" x={5} y={aimPos.y-p.fontSize/2-2} height={p.fontSize+4} width={offsetX-5} stroke={'var(--theme-chart-scale-color)'} strokeWidth={'1px'} fill="var(--theme-chart-bg-color)"/>);
         ret.push(<text key="aim-indicator-text" x={7} y={aimPos.y+p.fontSize/2-2} fill={'var(--theme-chart-scale-color)'} fontSize={p.fontSize}>{value.toFixed(2).toString()}</text>);
         let infoX = offsetX;
         const infoWidth = p.fontSize * 11;
         if (x < (w + offsetX) / 2) // offsetX + (w - offsetX) / 2 = (w + offsetX) / 2
             infoX = w - infoWidth;
-        ret.push(<rect key="aim-info" x={infoX} y={CHART_TOP_OFFSET-20} width={infoWidth} height={p.fontSize*10} stroke={'var(--theme-chart-scale-color)'} strokeWidth={'1px'} fill="var(--theme-chart-bg-color)"/>);
+        ret.push(<rect key="aim-info" x={infoX} y={0} width={infoWidth} height={p.fontSize*10} stroke={'var(--theme-chart-scale-color)'} strokeWidth={'1px'} fill="var(--theme-chart-bg-color)"/>);
         index += displayRange.begin;
         if (index < 0) index = 0;
         else if (index >= data.length) index = data.length - 1;
@@ -281,8 +284,8 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
             data[index].volume, 
             data[index].amount, 
             data[index].open_interest];
-        for(let i = 0; i < 8; i++) {
-          ret.push(<text key={`aim-info-text-${i}`} x={infoX + 5} y={CHART_TOP_OFFSET - 5 + i * p.fontSize * 1.2} fontSize={p.fontSize} fill="var(--theme-chart-scale-color)">{`${t(`data_fields.${AIM_INFO_FIELDS[i]}`)}: ${info[i]}`}</text>);
+        for(let i = 0; i < info.length; i++) {
+          ret.push(<text key={`aim-info-text-${i}`} x={infoX + 5} y={p.fontSize + i * p.fontSize * 1.2} fontSize={p.fontSize} fill="var(--theme-chart-scale-color)">{`${t(`data_fields.${AIM_INFO_FIELDS[i]}`)}: ${info[i]}`}</text>);
         } 
         return ret;
     }, [displayAim, aimPos.x, aimPos.y, w, h, offsetX, displayRange.begin, displayRange.end, p.fontSize, p.data.high, p.data.low, data, t]);
@@ -300,16 +303,16 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
     const clickTimer = useRef<NodeJS.Timeout>(null);
 
     const onPointerDown: PointerEventHandler<HTMLDivElement> = useCallback((e) => {
-        if (SVGRef.current === null)
+        if (RootDivRef.current === null)
             return;
-        const {x: rectX, y: rectY} = SVGRef.current.getBoundingClientRect();
+        const {x: rectX, y: rectY} = RootDivRef.current.getBoundingClientRect();
         const clientX = e.clientX - rectX;
         const clientY = e.clientY - rectY;
         const chartBottom = CHART_TOP_OFFSET + h * CHART_HEIGHT_RATIO;
         if (clientX < offsetX || clientY < CHART_TOP_OFFSET || clientY > chartBottom) {
             return;
         }
-        setOldPos({x: clientX, y: clientY});
+        setOldPos({x: clientX, y: clientY - CHART_TOP_OFFSET});
         setDragging(true);
         clickTimer.current = setTimeout(() => {
             clickTimer.current = null;
@@ -322,9 +325,9 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
             return;
         } 
         clearTimeout(clickTimer.current);
-        if (SVGRef.current === null)
+        if (RootDivRef.current === null)
             return;
-        const rect = SVGRef.current.getBoundingClientRect();
+        const rect = RootDivRef.current.getBoundingClientRect();
         const x = e.clientX - rect.x;
         const y = e.clientY - rect.y;
         const chartBottom = CHART_TOP_OFFSET + h * CHART_HEIGHT_RATIO;
@@ -332,30 +335,30 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
             setDisplayAim(false);
             return;
         }
-        setDisplayAim(!displayAim);
-        if (!displayAim)
-            return;
         let clampedX = x;
         let clampedY = y;
         if (clampedX < offsetX) clampedX = offsetX;
-        if (clampedY < CHART_TOP_OFFSET) clampedY = CHART_TOP_OFFSET;
-        else if (clampedY - CHART_TOP_OFFSET > h * CHART_HEIGHT_RATIO) clampedY = h * CHART_HEIGHT_RATIO + CHART_TOP_OFFSET;
-        setAimPos({x: clampedX, y: clampedY});
+        if (clampedY < CHART_TOP_OFFSET) clampedY = 0;
+        else if (clampedY - CHART_TOP_OFFSET > h * CHART_HEIGHT_RATIO) clampedY = h * CHART_HEIGHT_RATIO;
+        setAimPos({x: clampedX, y: clampedY - CHART_TOP_OFFSET});
+        setDisplayAim(!displayAim);
+        if (!displayAim)
+            return;
     }, [displayAim, h, offsetX]); 
 
     const xDelta = useRef(0);
     const left = useRef(false);
 
     const onPointerMove: PointerEventHandler<HTMLDivElement> = useCallback((e) => {
-        if (SVGRef.current === null)
+        if (RootDivRef.current === null)
             return;
-        const rect = SVGRef.current.getBoundingClientRect();
+        const rect = RootDivRef.current.getBoundingClientRect();
         let x = e.clientX - rect.x;
-        let y = e.clientY - rect.y;
+        let y = e.clientY - rect.y - CHART_TOP_OFFSET;
         if (displayAim) {
             if (x < offsetX) x = offsetX;
-            if (y < CHART_TOP_OFFSET) y = CHART_TOP_OFFSET;
-            else if (y - CHART_TOP_OFFSET > h * CHART_HEIGHT_RATIO) y = h * CHART_HEIGHT_RATIO + CHART_TOP_OFFSET;
+            if (y < 0) y = 0;
+            else if (y > h * CHART_HEIGHT_RATIO) y = h * CHART_HEIGHT_RATIO;
             requestAnimationFrame(() => {
                 setAimPos({x: x, y: y});
             });
@@ -449,9 +452,9 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
     }, [displayRange.begin, displayRange.end, offsetX, w, data.length]);
 
     const onWheel: WheelEventHandler<HTMLDivElement> = useCallback((e) => {
-        if (SVGRef.current === null)
+        if (RootDivRef.current === null)
             return;
-        const rect = SVGRef.current.getBoundingClientRect();
+        const rect = RootDivRef.current.getBoundingClientRect();
         const x = e.clientX - rect.x;
         const y = e.clientY - rect.y;
         const chartBottom = CHART_TOP_OFFSET + h * CHART_HEIGHT_RATIO;
@@ -465,7 +468,7 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
         });
     }, [zoom, offsetX, h]);
 
-    return <div 
+    return <div ref={RootDivRef}
     onPointerDown={onPointerDown} 
     onPointerMove={onPointerMove} 
     onPointerUp={onPointerUp} 
@@ -492,6 +495,7 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
                     style={{
                         backgroundColor: 'transparent',
                         color: 'var(--theme-chart-scale-color)',
+                        margin: '0',
                         border: '1px solid',
                         borderColor: 'var(--theme-chart-border-color)',
                         borderRadius: '4px',
@@ -499,7 +503,7 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
                         fontSize: '0.7rem',
                         outline: 'none',
                         width: 'fit-content',
-                        height: '1.5rem'
+                        height: '100%'
                     }}>
                     {PERIOD_OPTIONS.map(option => (
                         <option key={option} value={option} style={{
@@ -525,7 +529,7 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
                         fontSize: '0.7rem',
                         outline: 'none',
                         width: 'fit-content',
-                        height: '1.5rem'
+                        height: '100%'
                     }}>
                     {INDICATOR_OPTIONS.map(option => (
                         <option key={option} value={option} style={{
@@ -551,7 +555,7 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
                 flex: 1
             }}></div>
         </div>
-        <svg ref={SVGRef} width={w} height={h*0.85+50} 
+        <svg width={w} height={h - CHART_TOP_OFFSET} 
             style={{
                 userSelect: 'none',
                 position: 'relative',
