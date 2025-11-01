@@ -2,6 +2,8 @@
 .github
 .git
 Server/data_backup
+archived
+*.local.*
 
 # redis
 *.rdb

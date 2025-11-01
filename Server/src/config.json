@@ -3,12 +3,6 @@
         "port": 888,
         "base": "/api"
     },
-    "upstream": {
-        "name": "tushare",
-        "url_root": "http://api.tushare.pro",
-        "token": "46a0a2d4fdc0268a2d9bcf01d54f36251d026778563cb15c9c82e10b",
-        "backup_dir": "/home/QuantDirect.d/json"
-    },
     "redis": {
         "host": "127.0.0.1",
         "port": 6666,
@@ -18,17 +12,23 @@
         "enableReadyCheck": false,
         "maxRetriesPerRequest": null
     },
-    "market_data": {
+    "data_dir": {
+        "root": "/var/QuantDirect/json",
+        "status": "status.json",
         "futures": {
-            "contracts": {
-                "dir": "/home/data/futures/json"
-            },
-            "options": {
-
-            }
+            "root": "futures",
+            "contract_info": "contracts/info",
+            "contract_data": "contracts/data",
+            "options_info": "options/info",
+            "options_data": "options/data"
         },
-        "stock": {
-
+        "stock_cn": {
+            "list": "stock_cn/list",
+            "data": "stock_cn/data"
+        },
+        "stock_hk": {
+            "list": "stock_hk/list",
+            "data": "stock_hk/data"
         }
     }
 }

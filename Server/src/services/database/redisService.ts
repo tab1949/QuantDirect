@@ -1,5 +1,6 @@
 import RedisClient from './redisClient';
 import { getLogger } from '../../logger';
+import { ContractListData } from './files';
 
 const logger = getLogger('redis');
 
@@ -77,11 +78,11 @@ class RedisService {
         }
     }
     
-    public async initFuturesContractInfo(data: any, exchange: string): Promise<void> {
+    public async resetFuturesContractInfo(data: ContractListData, exchange: string): Promise<void> {
         try {
             let list: Array<string> = [];
             for (let item of data.items) {
-                if (await this.redisClient.hGet(keys.contractInfo, item[0]))
+                if (await this.redisClient.hGet(keys.contractInfo, item[0] as string))
                     continue;
                 this.redisClient.hSetJson(keys.contractInfo, item[0] as string, item);
                 list.push(item[0] as string);
@@ -92,28 +93,7 @@ class RedisService {
             this.redisClient.hSetJson(keys.contractList, exchange, {"contracts": list});
         }
         catch(err) {
-            logger.error('Failed to initialize futures contract info in Redis:', err);
-            throw err;
-        }
-    }
-
-    public async updateFuturesContractInfo(data: any, exchange: string): Promise<void> {
-        try {
-            let list = await this.redisClient.hGetJson(keys.contractList, exchange);
-            let names: Array<string> = await this.redisClient.sMembers(keys.contractAssets + ":" + exchange);
-            for (let item of data.items) {
-                this.redisClient.hSetJson(keys.contractInfo, item[0] as string, item);
-                list.contracts.push(item[0] as string);
-                const assetName = (item[3] as string).replace(/TAS$/, '').replace(/连续$/, '').replace(/主力$/, '').replace(/\d+$/, '');
-                if (!names.includes(assetName)) {
-                    this.redisClient.sAdd(keys.contractAssets + ":" + exchange, assetName);
-                    this.redisClient.hSet(keys.contractAssetCodes, assetName, item[4] as string);
-                }
-            }
-            this.redisClient.hSetJson(keys.contractList, exchange, list);
-        }
-        catch(err) {
-            logger.error('Failed to update futures contract info in Redis:', err);
+            logger.error('Failed to reset futures contract info in Redis:', err);
             throw err;
         }
     }

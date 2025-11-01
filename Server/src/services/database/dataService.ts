@@ -30,8 +30,7 @@ const exchange_alias: { [key: string]: string } = {
 
 export class DataService {
     worker: Worker | null = null;
-    updateIntervalMinute: NodeJS.Timeout | null = null;
-    updateIntervalDay: NodeJS.Timeout | null = null;
+    updateInterval: NodeJS.Timeout | null = null; // This is used for updating Redis
     config: any;
     redisService: RedisService | null = null;
 
@@ -83,25 +82,15 @@ export class DataService {
             this.worker.postMessage('start');
             logger.info("DataService worker started.");
             
-            this.worker.postMessage('check-updates');
-            this.worker.postMessage('check-updates-lists');
+            this.worker.postMessage('check-update');
             
             // Check market data update
             // Interval: 1 minute
             setTimeout(() => {
-                this.updateIntervalMinute = setInterval(() => {
-                    this.worker?.postMessage('check-updates');
+                this.updateInterval = setInterval(() => {
+                    this.worker?.postMessage('check-update');
                 }, 60_000);
             }, 60_000 - (Date.now() % 60_000));
-            
-            // Check tradable lists update
-            // Interval: 1 day
-            setTimeout(() => {
-                this.updateIntervalDay = setInterval(() => {
-                    this.worker?.postMessage('check-updates-lists');
-                }, 3_600_000 * 24);
-            // Align to UTC+8 midnight
-            }, 3_600_000 * 24 - ((Date.now() + 8 * 60 * 60 * 1000) % (3_600_000 * 24)));
         } catch (error) {
             logger.error('Failed to start data service:', error);
             throw error;
@@ -121,14 +110,9 @@ export class DataService {
             }
             
             // Clear intervals
-            if (this.updateIntervalMinute) {
-                clearInterval(this.updateIntervalMinute);
-                this.updateIntervalMinute = null;
-            }
-            
-            if (this.updateIntervalDay) {
-                clearInterval(this.updateIntervalDay);
-                this.updateIntervalDay = null;
+            if (this.updateInterval) {
+                clearInterval(this.updateInterval);
+                this.updateInterval = null;
             }
             
             logger.info("Data service stopped");
@@ -220,7 +204,8 @@ export class DataService {
     public async getFuturesData(code: string): Promise<any> {
         const [contract, exchange] = code.split('.', 2);
         const asset = contract.match(/^[A-Za-z]+/)?.[0] || '';
-        const path = <string>this.config.market_data.futures.contracts.dir + '/' + exchange_alias[exchange] + '/' + asset + '/' + contract + '.json';
+        const paths = this.config.data_dir;
+        const path: string = `${paths.root}/${paths.futures.root}/${paths.futures.contract_data}/${exchange_alias[exchange]}/${asset}/${contract}.json`;
         if (fs.existsSync(path))
             return JSON.parse(await fs.promises.readFile(path, 'utf8'));
         return null;

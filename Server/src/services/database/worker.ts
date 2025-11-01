@@ -1,11 +1,11 @@
 import { parentPort, workerData } from "worker_threads";
 import { getLogger } from "../../logger";
 import RedisService from "./redisService";
-import * as Futures from "./futures";
+import * as Cache from "./cache";
+import config from "../../config.json";
 
 const logger = getLogger('database');
 
-const workerConfig: { upstream: any; redis: any } = workerData as any;
 let redisService: RedisService | null = null;
 
 // Handler
@@ -13,8 +13,7 @@ parentPort?.on("message", async (msg) =>  {
     switch(msg) {
     case "start":
         try {
-            // 初始化Redis服务
-            redisService = new RedisService(workerConfig.redis);
+            redisService = new RedisService(config.redis);
             await redisService.init();
             parentPort?.postMessage("Redis service initialized.");
         } catch (error) {
@@ -22,26 +21,19 @@ parentPort?.on("message", async (msg) =>  {
             parentPort?.postMessage(`Redis initialization failed: ${error}`);
         }
         break;
-    case "check-updates":
+    case "check-update":
         try {
-            
-        } catch (error) {
-            logger.error("Error in check-updates:", error);
-        }
-        break;
-    case "check-updates-lists":
-        try {
-            parentPort?.postMessage("Checking updates for futures lists...");
+            parentPort?.postMessage("Checking updates for Redis cache...");
             if (redisService) {
-                await Futures.updateFuturesContractList(redisService, workerConfig);
-                parentPort?.postMessage("Futures lists updated successfully");
+                await Cache.updateCache(redisService, config.data_dir);
+                parentPort?.postMessage("Redis cache updated successfully");
             }
             else {
-                throw `Redis not initialized. Configuration: ${workerConfig.redis}`;
+                throw `Redis not initialized. Redis config: ${config.redis}`;
             }
         } catch (error) {
-            logger.error("Error in check-updates-lists:", error);
-            parentPort?.postMessage(`Futures lists update failed: ${error}`);
+            logger.error("Error in worker thread (message: check-update):", error);
+            parentPort?.postMessage(`Redis cache update failed: ${error}`);
         }
         break;
     case "stop":
