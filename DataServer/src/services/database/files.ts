@@ -22,7 +22,7 @@ export interface DataDirConfig {
     }
 };
 
-const logger = getLogger('backup');
+const logger = getLogger('files');
 
 export function Exists(dir: string): boolean {
     return fs.existsSync(dir);
@@ -30,14 +30,18 @@ export function Exists(dir: string): boolean {
 
 export interface ContractListData {
     fields: string[],
-    items: Array<Array<string|number>>
+    items: string[][]
 };
 
 export function ReadFuturesContractList(dir: DataDirConfig, exchange: string): ContractListData {
-    const file = `${dir.root}/${dir.futures.root}/${dir.futures.contract_info}/${exchange}.json`;
+    const file = `${dir.root}/${dir.futures.root}/${dir.futures.contract_info}/${exchange}.csv`;
+    const data = fs.readFileSync(file).toString().split('\n');
+    const items: string[][] = [];
+    for (let i = 1; i < data.length; ++i) {
+        items.push(data[i].split(','));
+    }
     try {
-        const data = JSON.parse(fs.readFileSync(file).toString());
-        return {fields: data.fields, items: data.items};
+        return {fields: data[0].split(','), items: items};
     }
     catch (e) {
         logger.error(`Failed to read ${file}, error: ${e}`);

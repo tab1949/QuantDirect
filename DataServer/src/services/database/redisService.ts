@@ -82,13 +82,17 @@ class RedisService {
         try {
             let list: Array<string> = [];
             for (let item of data.items) {
+                if (item.length <= 1)
+                    continue;
                 if (await this.redisClient.hGet(keys.contractInfo, item[0] as string))
                     continue;
                 this.redisClient.hSetJson(keys.contractInfo, item[0] as string, item);
                 list.push(item[0] as string);
-                let assetName = (item[3] as string).replace(/TAS$/, '').replace(/连续$/, '').replace(/主力$/, '').replace(/\d+$/, '');
-                this.redisClient.sAdd(keys.contractAssets + ":" + exchange, assetName);
-                this.redisClient.hSet(keys.contractAssetCodes, assetName, item[4] as string);
+                if (item[3] != undefined) {
+                    let assetName = (item[3] as string).replace(/TAS$/, '').replace(/连续$/, '').replace(/主力$/, '').replace(/\d+$/, '');
+                    this.redisClient.sAdd(keys.contractAssets + ":" + exchange, assetName);
+                    this.redisClient.hSet(keys.contractAssetCodes, assetName, item[4] as string);
+                }
             }
             this.redisClient.hSetJson(keys.contractList, exchange, {"contracts": list});
         }
