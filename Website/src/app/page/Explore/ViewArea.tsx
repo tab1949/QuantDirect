@@ -13,8 +13,12 @@ interface ViewAreaProps {
 }
 
 const SubjectListItem = styled(ListItem)`
+    display: flex;
+    flex-direction: column;
+    align-items: start;
     font-size: 1.2rem;
-    padding: 5px;
+    padding: 0.1rem;
+    padding-left: 0.2rem;
 `;
 
 const ContractListItem = styled(ListItem)`
@@ -162,6 +166,7 @@ function FuturesContent({ exchange }: FuturesContentProps) {
                         assets.map((asset, index) => (
                             <SubjectListItem key={`${asset}-${index}`} onClick={()=>{setSelectedAsset({code: asset.code, exchange: exchange});}}>
                                 <div>{asset.name}</div>
+                                <div style={{fontSize: '1rem', justifySelf:"end"}}>{asset.code}</div>
                             </SubjectListItem>
                         ))
                     )}

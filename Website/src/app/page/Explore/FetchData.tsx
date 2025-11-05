@@ -3,8 +3,8 @@ import axios from 'axios';
 const api_base = 'http://localhost:888/api';
 const contractInfo = new Map;
 
-export async function GetSubjectAssets(exchange: string): Promise<{name: string, code: string}[]> {
-    const response = await axios.get<{name: string, code: string}[]>(
+export async function GetSubjectAssets(exchange: string): Promise<{code: string, name: string}[]> {
+    const response = await axios.get<{code: string, name: string}[]>(
         `${api_base}/futures/contract/assets/${exchange}`,
         {
             headers: {

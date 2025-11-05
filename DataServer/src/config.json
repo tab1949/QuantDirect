@@ -13,7 +13,7 @@
         "maxRetriesPerRequest": null
     },
     "data_dir": {
-        "root": "/var/QuantDirect/json",
+        "root": "/var/QuantDirect",
         "status": "status.json",
         "futures": {
             "root": "futures",
@@ -23,12 +23,12 @@
             "options_data": "options/data"
         },
         "stock_cn": {
-            "list": "stock_cn/list",
-            "data": "stock_cn/data"
+            "list": "stocks/cn/list",
+            "data": "stocks/cn/data"
         },
         "stock_hk": {
-            "list": "stock_hk/list",
-            "data": "stock_hk/data"
+            "list": "stocks/hk/list",
+            "data": "stocks/hk/data"
         }
     }
 }
