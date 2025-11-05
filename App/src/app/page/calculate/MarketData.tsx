@@ -1,11 +1,9 @@
-import { JSX } from "react";
-
 export interface ArrayedData {
     fields: string[], 
     data: Array<Array<string|number>>
 };
 
-export interface CandleStickChartData {
+export interface CandleStickChartDataUnit {
     time: string;
     open: number;
     close: number;
@@ -16,8 +14,56 @@ export interface CandleStickChartData {
     open_interest: number;
 };
 
-function CandleStickChartData(): CandleStickChartData[] {
-    return [];
+export class CandleStickChartData {
+    public data: CandleStickChartDataUnit[];
+    public constructor() {
+        this.data = [];
+    }
+
+    public getData(): CandleStickChartDataUnit[] {
+        return this.data;
+    }
+
+    public push(data: CandleStickChartDataUnit) {
+        this.data.push(data);
+    }
+
+    public length(): number {
+        return this.data.length;
+    }
+
+    public MA(duration: number): number[] { // Moving Average
+        const ret: number[] = [];
+        if (this.length() < duration)
+            return ret;
+        let sum: number = 0;
+        for (let i = 0; i < this.data.length; ++i) {
+            sum += this.data[i].close;
+            if (i >= duration) {
+                sum -= this.data[i - duration].close;
+                ret.push(sum / duration);
+            }
+            else {
+                ret.push(-1);
+            }
+        }
+        return ret;
+    }
+
+    public EXPMA(duration: number): number[] { // Exponential Moving Average
+        const ret: number[] = [];
+        if (this.length() < duration)
+            return ret;
+        for (let i = 0; i < this.data.length; ++i) {
+            if (i == 0) {
+                ret.push(this.data[i].close);
+            }
+            else {
+                ret.push((this.data[i].close * 2 + ret[i - 1] * (duration - 1)) / (duration + 1));
+            }
+        }
+        return ret;
+    }
 };
 
 export const PERIOD_OPTIONS = [
@@ -31,12 +77,12 @@ const NIGHT_BEGIN_HOUR: number = 21;
 const DAY_BEGIN_HOUR = 8; 
 
 export class StaticMarketData {
-    private dataMin: CandleStickChartData[];
-    private dataDay: CandleStickChartData[];
+    private dataMin: CandleStickChartData;
+    private dataDay: CandleStickChartData;
 
     constructor(data: ArrayedData) {
-        this.dataMin = CandleStickChartData();
-        this.dataDay = CandleStickChartData();
+        this.dataMin = new CandleStickChartData();
+        this.dataDay = new CandleStickChartData();
         
         const index = {
             time: -1,
@@ -90,28 +136,28 @@ export class StaticMarketData {
         });
         if (index.open_interest !== -1) { // Only if open_interest is available
             data.data.forEach((v: Array<string|number>, i: number) => {
-                this.dataMin[i].open_interest = v[index.open_interest] as number;
+                this.dataMin.data[i].open_interest = v[index.open_interest] as number;
             });
         }
         
         this.aggregateToDay();
     }
 
-    public getData(period: string): CandleStickChartData[] {
+    public getData(period: string): CandleStickChartData {
         if (period === '1min')
             return this.dataMin;
         if (period === '1day') 
             return this.dataDay;
         
-        return [];
+        return new CandleStickChartData();
     }
 
     // only invoked in constructor
     private aggregateToDay(): void {
         if (this.hasNightSession()) {
             const tradingDays: string[] = [];
-            for (let i = 0; i < this.dataMin.length; ++i) {
-                const date = new Date(this.dataMin[i].time);
+            for (let i = 0; i < this.dataMin.length(); ++i) {
+                const date = new Date(this.dataMin.data[i].time);
                 if (date.getHours() >= DAY_BEGIN_HOUR && date.getHours() < NIGHT_BEGIN_HOUR) {
                     tradingDays.push(`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`);
                 }
@@ -119,8 +165,8 @@ export class StaticMarketData {
                     tradingDays.push('');
                 }
             }
-            let date: string = this.dataMin[this.dataMin.length - 1].time.split(' ')[0];
-            for (let i = this.dataMin.length - 1; i >= 0; --i) {
+            let date: string = this.dataMin.data[this.dataMin.length() - 1].time.split(' ')[0];
+            for (let i = this.dataMin.length() - 1; i >= 0; --i) {
                 if (tradingDays[i] !== '')
                     date = tradingDays[i];
                 else
@@ -130,21 +176,21 @@ export class StaticMarketData {
             let lastDate = tradingDays[0];
             for (let i = 0; i < tradingDays.length; ++i) {
                 if (tradingDays[i] != lastDate) {
-                    this.dataDay.push(this.aggregate(this.dataMin, begin, i - 1, lastDate));
+                    this.dataDay.push(this.aggregate(this.dataMin.data, begin, i - 1, lastDate));
                     begin = i;
                 }
                 lastDate = tradingDays[i];
             }
             if (lastDate !== tradingDays[tradingDays.length - 2])
-                this.dataDay.push(this.aggregate(this.dataMin, begin, this.dataMin.length - 1, lastDate));
+                this.dataDay.push(this.aggregate(this.dataMin.data, begin, this.dataMin.length() - 1, lastDate));
             return;
         }
         let begin = 0;
-        let lastDate = new Date(this.dataMin[0].time);
-        for (let i = 0; i < this.dataMin.length; ++i) {
-            const currentDate = new Date(this.dataMin[i].time);
+        let lastDate = new Date(this.dataMin.data[0].time);
+        for (let i = 0; i < this.dataMin.length(); ++i) {
+            const currentDate = new Date(this.dataMin.data[i].time);
             if (currentDate.getDate() != lastDate.getDate()) {
-                this.dataDay.push(this.aggregate(this.dataMin, begin, i - 1, lastDate.toISOString().split('T')[0]));
+                this.dataDay.push(this.aggregate(this.dataMin.data, begin, i - 1, lastDate.toISOString().split('T')[0]));
                 begin = i;
             }
             lastDate = currentDate;
@@ -153,11 +199,11 @@ export class StaticMarketData {
     }
 
     private hasNightSession(): boolean {
-        if (this.dataMin.length <= 0)
+        if (this.dataMin.length() <= 0)
             return false;
         let ret: boolean = false;
-        for (let i = 1; i < this.dataMin.length; ++i) {
-            const currentHour = (new Date(this.dataMin[i].time)).getHours();
+        for (let i = 1; i < this.dataMin.length(); ++i) {
+            const currentHour = (new Date(this.dataMin.data[i].time)).getHours();
             if (currentHour >= NIGHT_BEGIN_HOUR || currentHour < DAY_BEGIN_HOUR) {
                 ret = true;
                 break;
@@ -166,8 +212,8 @@ export class StaticMarketData {
         return ret;
     }
 
-    private aggregate(data: CandleStickChartData[], begin: number, end: number, time: string): CandleStickChartData {
-        const ret: CandleStickChartData = {
+    private aggregate(data: CandleStickChartDataUnit[], begin: number, end: number, time: string): CandleStickChartDataUnit {
+        const ret: CandleStickChartDataUnit = {
             time: time,
             open: data[begin].open,
             close: data[end].close,
@@ -201,9 +247,16 @@ export interface IndicatorDisplayStyle {
     weight?: string;
 };
 
-export type IndicatorResult = number[];
+export type IndicatorValue = number[];
 
-export type CalcFunction = (args: CandleStickChartData[], param: number[]) => IndicatorResult[];
+export interface IndicatorResultParam {
+    param?: number;
+    describe: string;
+    display: IndicatorDisplay;
+    style: IndicatorDisplayStyle;
+};
+
+export type CalcFunction = (args: CandleStickChartData, param: IndicatorResultParam[]) => IndicatorValue[];
 
 class IndicatorCalc {
     private readonly calc: CalcFunction;
@@ -212,7 +265,7 @@ class IndicatorCalc {
         this.calc = calc;
     }
 
-    public calculate(data: CandleStickChartData[], param: number[]): IndicatorResult[] {
+    public calculate(data: CandleStickChartData, param: IndicatorResultParam[]): IndicatorValue[] {
         return this.calc(data, param);
     }
 }; // class IndicatorCalc
@@ -220,21 +273,15 @@ class IndicatorCalc {
 export class Indicator {
     public readonly name: string;
     public readonly description?: string;
+    public readonly param: IndicatorResultParam[];
     public readonly calc: IndicatorCalc;
-    public readonly param: number[];
-    public readonly display: IndicatorDisplay[];
-    public readonly style: IndicatorDisplayStyle[];
     public readonly source: 'preset' | 'custom';
-    public data: IndicatorResult[];
-    public readonly resultDesc: string[];
+    public data: IndicatorValue[];
 
     constructor(
         name: string, 
         description: string,
-        param: number[],
-        resultDesc: string[],
-        display: IndicatorDisplay[], 
-        style: IndicatorDisplayStyle[],
+        param: IndicatorResultParam[],
         source: 'preset' | 'custom',
         calc: CalcFunction) {
 
@@ -242,9 +289,6 @@ export class Indicator {
         this.description = description;
         this.calc = new IndicatorCalc(calc);
         this.param = param;
-        this.resultDesc = resultDesc;
-        this.display = display;
-        this.style = style;
         this.source = source;
         this.data = [];
     }
@@ -255,7 +299,7 @@ export class Indicator {
         return ret;
     }
 
-    public updateData(data: CandleStickChartData[]) {
+    public updateData(data: CandleStickChartData) {
         this.data = this.calc.calculate(data, this.param);
     }
 

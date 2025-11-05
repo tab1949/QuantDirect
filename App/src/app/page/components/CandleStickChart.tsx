@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo, ReactElement, PointerEventHandler, WheelEventHandler, memo } from "react";
 import { useTranslation } from "react-i18next";
 
-import { StaticMarketData, CandleStickChartData, PERIOD_OPTIONS, INDICATOR_OPTIONS, Indicator, IndicatorResult, IndicatorDisplay } from '../calculate/MarketData';
+import { StaticMarketData, CandleStickChartData, PERIOD_OPTIONS, INDICATOR_OPTIONS, Indicator, IndicatorDisplay } from '../calculate/MarketData';
 import * as Indicators from "../calculate/Indicators";
 interface ContentInterface {
     $w: number,
@@ -9,12 +9,12 @@ interface ContentInterface {
     $data: StaticMarketData
 };
 
-const validateChartData = (data: CandleStickChartData[], displayRange: {begin: number, end: number}) => {
-    if (!data || data.length === 0) return false;
+const validateChartData = (data: CandleStickChartData, displayRange: {begin: number, end: number}) => {
+    if (!data || data.length() === 0) return false;
     if (displayRange.begin < 0 || 
         displayRange.end < 0 || 
-        displayRange.begin >= data.length || 
-        displayRange.end >= data.length ||
+        displayRange.begin >= data.length() || 
+        displayRange.end >= data.length() ||
         displayRange.begin > displayRange.end) 
         return false;
     return true;
@@ -33,21 +33,25 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
     const [indicatorName, setIndicatorName] = useState('MA');
     const [indicatorValue, setIndicatorValue] = useState<string[]>([]);
     const [indicatorValueDesc, setIndicatorValueDesc] = useState<string[]>([]);
-    const data = useMemo<CandleStickChartData[]>(() => param.$data.getData(period), [param.$data, period]);
+    const data = useMemo<CandleStickChartData>(() => param.$data.getData(period) as CandleStickChartData, [param.$data, period]);
     const w = param.$w;
     const h = param.$h;
 
     useEffect(() => {
-        if (data.length > 0) {
+        if (data.length() > 0) {
             const newRange = {
-                begin: data.length > 100? data.length - 50 : 0, 
-                end: data.length - 1 
+                begin: data.length() > 100? data.length() - 50 : 0, 
+                end: data.length() - 1 
             };
             setDisplayRange(newRange);
         } else {
             setDisplayRange({begin: 0, end: 0});
         }
-    }, [data.length]);
+    }, [data.length()]);
+
+    const indicator = useMemo<Indicator>(() => {
+        return Indicators.GetIndicatorByName(indicatorName) as Indicator;
+    }, [indicatorName]); 
 
     // Calculation of important properties
     const p = useMemo(() => {
@@ -70,14 +74,22 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
             };
         }
 
-        let high = data[displayRange.begin].high;
+        let high = data.data[displayRange.begin].high;
         let low = high;
         const yScaleValue: Array<number> = [];
         for (let i = displayRange.begin; i <= displayRange.end; ++i) {
-            if (!data[i].high || !data[i].low) continue; // Only check data existence
+            if (!data.data[i].high || !data.data[i].low) continue; // Only check data existence
 
-            const highVal = data[i].high;
-            const lowVal = data[i].low;
+            let indMax = high;
+            let indMin = low;
+            for (const ind of indicator.data) {
+                if (ind[i] > indMax)
+                    indMax = ind[i];
+                if (ind[i] != -1 && ind[i] < indMin)
+                    indMin = ind[i];
+            }
+            const highVal = Math.max(data.data[i].high, indMax);
+            const lowVal = Math.min(data.data[i].low, indMin);
             
             if (highVal > high) high = highVal;
             if (lowVal < low) low = lowVal;
@@ -110,7 +122,7 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
                 low: low
             }
         }
-    }, [yScaleCount, h, data, displayRange]);
+    }, [yScaleCount, h, data, displayRange, indicator.data]);
     const offsetX = p.data.max_length * p.fontSize + 10;
 
     const yScale = useMemo(() => {
@@ -146,12 +158,12 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
         return ret;
     }, [w, h, displayRange.begin, displayRange.end, offsetX]); 
 
-    const indicator = useMemo<Indicator>(() => {
-        return Indicators.GetIndicatorByName(indicatorName) as Indicator;
-    }, [indicatorName]); 
-
     useEffect(() => {
-        setIndicatorValueDesc(indicator.resultDesc);
+        const desc: string[] = [];
+        indicator.param.forEach((value) => {
+            desc.push(value.describe);
+        });
+        setIndicatorValueDesc(desc);
         indicator.updateData(data);
     }, [indicator, data]);
 
@@ -170,13 +182,13 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
         const labelY = h * CHART_HEIGHT_RATIO + 2*p.fontSize + CHART_X_SCALE_OFFSET;
 
         for (let i = 0, k = displayRange.begin; i < displayCount; ++i, ++ k) {
-            if (!data[k].high || !data[k].low || !data[k].open || !data[k].close) continue; // Only check data existence
+            if (!data.data[k].high || !data.data[k].low || !data.data[k].open || !data.data[k].close) continue; // Only check data existence
             
             const x = offsetX + width * i;
-            const height = unitY * ((data[k].open as number) - (data[k].close as number));
-            const bodyY = unitY * (p.data.high - ((height > 0? data[k].open: data[k].close) as number));
-            const wickY1 = unitY * (p.data.high - (data[k].high as number));
-            const wickY2 = unitY * (p.data.high - (data[k].low as number));
+            const height = unitY * ((data.data[k].open as number) - (data.data[k].close as number));
+            const bodyY = unitY * (p.data.high - ((height > 0? data.data[k].open: data.data[k].close) as number));
+            const wickY1 = unitY * (p.data.high - (data.data[k].high as number));
+            const wickY2 = unitY * (p.data.high - (data.data[k].low as number));
 
             if (height < 0) { // rise
                 ret.push(<g key={`candle-${i}`}>
@@ -197,8 +209,8 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
                 </g>);
             }            
 
-            if (i % sample == 0 && data[k].time) {
-                const timeStr = data[k].time;
+            if (i % sample == 0 && data.data[k].time) {
+                const timeStr = data.data[k].time;
                 let text = '?';
                 if (timeStr.includes(' ')) {
                     // YYYY-MM-DD HH:mm:SS -> HH:mm
@@ -214,15 +226,15 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
             }
         }
         
-        const indicatorProp: {data: string, type: IndicatorDisplay}[] = [];
-        for (const d of indicator.display) {
-            indicatorProp.push({data: '', type: d});
+        const indicatorData: string[] = [];
+        for (let i = 0; i < indicator.param.length; ++i) {
+            indicatorData.push('');
         }            
         for (let i = 0, k = displayRange.begin; i < displayCount; ++i, ++ k) {
             const x = offsetX + width * i;
             if (k > 0)
-            for (let d = 0; d < indicator.display.length; ++d) {
-                switch(indicatorProp[d].type) {
+            for (let d = 0; d < indicator.param.length; ++d) {
+                switch(indicator.param[d].display) {
                 case IndicatorDisplay.LINE:
                     if (!indicator.data[d] || indicator.data[d][k] == -1)
                         break;
@@ -232,21 +244,22 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
                         lastY = indicator.data[d][k];
                         lastX = x;
                     }
-                    indicatorProp[d].data += `M ${lastX} ${unitY*(p.data.high-lastY)} L ${x} ${unitY*(p.data.high-indicator.data[d][k])} `;
+                    indicatorData[d] += `M ${lastX} ${unitY*(p.data.high-lastY)} L ${x} ${unitY*(p.data.high-indicator.data[d][k])} `;
+                    break;
                 default: break;
                 }
             }
         }
-        for (let i = 0; i < indicatorProp.length; ++i) {
-            switch (indicatorProp[i].type) {
+        for (let i = 0; i < indicator.param.length; ++i) {
+            switch (indicator.param[i].display) {
             case IndicatorDisplay.LINE:
-                ret.push(<path key={`indicator=${i}`} d={indicatorProp[i].data} stroke={indicator.style[i].color} strokeWidth={indicator.style[i].weight}/>);
+                ret.push(<path key={`indicator=${i}`} d={indicatorData[i]} stroke={indicator.param[i].style.color} strokeWidth={indicator.param[i].style.weight}/>);
                 break;
             default: break;
             }
         }
         return ret;
-    }, [data, w, h, p.data.high, p.data.low, p.fontSize, displayRange, offsetX, indicator.data, indicator.display, indicator.style]);
+    }, [data, w, h, p.data.high, p.data.low, p.fontSize, displayRange, offsetX, indicator.data, indicator.param]);
 
     const RootDivRef = useRef<HTMLDivElement>(null);
     const [displayAim, setDisplayAim] = useState(false);
@@ -274,16 +287,16 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
         ret.push(<rect key="aim-info" x={infoX} y={0} width={infoWidth} height={p.fontSize*10} stroke={'var(--theme-chart-scale-color)'} strokeWidth={'1px'} fill="var(--theme-chart-bg-color)"/>);
         index += displayRange.begin;
         if (index < 0) index = 0;
-        else if (index >= data.length) index = data.length - 1;
+        else if (index >= data.length()) index = data.length() - 1;
         const info = [
-            data[index].time.replace(/:\d\d$/, ''), 
-            data[index].open, 
-            data[index].close, 
-            data[index].high, 
-            data[index].low, 
-            data[index].volume, 
-            data[index].amount, 
-            data[index].open_interest];
+            data.data[index].time.replace(/:\d\d$/, ''), 
+            data.data[index].open, 
+            data.data[index].close, 
+            data.data[index].high, 
+            data.data[index].low, 
+            data.data[index].volume, 
+            data.data[index].amount, 
+            data.data[index].open_interest];
         for(let i = 0; i < info.length; i++) {
           ret.push(<text key={`aim-info-text-${i}`} x={infoX + 5} y={p.fontSize + i * p.fontSize * 1.2} fontSize={p.fontSize} fill="var(--theme-chart-scale-color)">{`${t(`data_fields.${AIM_INFO_FIELDS[i]}`)}: ${info[i]}`}</text>);
         } 
@@ -294,11 +307,11 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
         const stickWidth = (w - offsetX) / (displayRange.end - displayRange.begin + 1);
         const index = Math.round((aimPos.x - offsetX) / stickWidth) + displayRange.begin;
         const iv: string[] = [];
-        for (let i = 0; i < indicator.resultDesc.length; ++i)
+        for (let i = 0; i < indicator.param.length; ++i)
             if (indicator.data[i][index])
                 iv.push(`${indicator.data[i][index].toFixed(2)}`);
         setIndicatorValue(iv);
-    }, [aimPos.x, displayRange, indicator.resultDesc.length, indicator.data, offsetX, w]);
+    }, [aimPos.x, displayRange, indicator.param.length, indicator.data, offsetX, w]);
 
     const clickTimer = useRef<NodeJS.Timeout>(null);
 
@@ -336,13 +349,14 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
             return;
         }
         let clampedX = x;
-        let clampedY = y;
+        let clampedY = y - CHART_TOP_OFFSET;
         if (clampedX < offsetX) clampedX = offsetX;
-        if (clampedY < CHART_TOP_OFFSET) clampedY = 0;
-        else if (clampedY - CHART_TOP_OFFSET > h * CHART_HEIGHT_RATIO) clampedY = h * CHART_HEIGHT_RATIO;
-        setAimPos({x: clampedX, y: clampedY - CHART_TOP_OFFSET});
-        setDisplayAim(!displayAim);
-        if (!displayAim)
+        if (clampedY < 0) clampedY = 0;
+        else if (clampedY > h * CHART_HEIGHT_RATIO) clampedY = h * CHART_HEIGHT_RATIO;
+        setAimPos({x: clampedX, y: clampedY});
+        const newDisplayAim = !displayAim;
+        setDisplayAim(newDisplayAim);
+        if (!newDisplayAim)
             return;
     }, [displayAim, h, offsetX]); 
 
@@ -364,7 +378,9 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
             });
         }
         else if (dragging) {
-            
+            const displayCount = displayRange.end - displayRange.begin + 1;
+            if (displayCount == data.length())
+                return;
             if (left.current) { // before: left
                 if (x > oldPos.x) { // now: right
                     left.current = false;
@@ -378,7 +394,6 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
                 }
             }
             xDelta.current += x - oldPos.x;
-            const displayCount = displayRange.end - displayRange.begin;
             const pixelPerDataPoint = (w - offsetX) / displayCount;
             
             let delta = xDelta.current / pixelPerDataPoint;
@@ -399,9 +414,9 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
                 if (newBegin < 0) {
                     newBegin = 0;
                     newEnd = displayCount - 1;
-                } else if (newEnd >= data.length) {
-                    newEnd = data.length - 1;
-                    newBegin = data.length - displayCount - 1;
+                } else if (newEnd >= data.length()) {
+                    newEnd = data.length() - 1;
+                    newBegin = data.length() - displayCount - 1;
                 }
                 setDisplayRange({begin: newBegin, end: newEnd});
                 
@@ -409,7 +424,7 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
                 animationFrameRef.current = null;
             });
         }
-    }, [displayAim, dragging, oldPos.x, displayRange.begin, displayRange.end, offsetX, w, h, data.length, xDelta]); 
+    }, [displayAim, dragging, oldPos.x, displayRange.begin, displayRange.end, offsetX, w, h, data.length(), xDelta]); 
 
     const onPointerLeave = useCallback(() => {
         if (dragging)
@@ -421,12 +436,12 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
     }, [dragging]);
 
     const zoom = useCallback((delta: number, x: number) => {
-        if (displayRange.end < displayRange.begin || data.length === 0) return;
+        if (displayRange.end < displayRange.begin || data.length() === 0) return;
         const oldLength = displayRange.end - displayRange.begin + 1;
         if (oldLength <= 0) return;
         const relativePos = Math.max(0, Math.min(1, (x - offsetX) / (w - offsetX)));
         const newLength = Math.max(1, Math.round(oldLength * Math.exp(-delta * 0.01)));
-        const totalLength = data.length;
+        const totalLength = data.length();
         if (newLength >= totalLength) {
             setDisplayRange({begin: 0, end: totalLength - 1});
             return;
@@ -449,7 +464,7 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
             new_end = clamped_index;
         }
         setDisplayRange({begin: new_begin, end: new_end});
-    }, [displayRange.begin, displayRange.end, offsetX, w, data.length]);
+    }, [displayRange.begin, displayRange.end, offsetX, w, data.length()]);
 
     const onWheel: WheelEventHandler<HTMLDivElement> = useCallback((e) => {
         if (RootDivRef.current === null)
@@ -544,7 +559,7 @@ const Content = memo(function ContentImpl(param: ContentInterface) {
                     fontSize: `${p.fontSize}px`
                 }}>
                     {displayAim && indicatorValueDesc.map((desc, index) => (
-                        <span key={`indicator-value-desc-${index}`} style={{color: indicator.style[index].color}}>
+                        <span key={`indicator-value-desc-${index}`} style={{color: indicator.param[index].style.color}}>
                             {desc}: {indicatorValue[index]};
                         </span>
                     ))}
