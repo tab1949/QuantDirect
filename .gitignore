@@ -31,7 +31,12 @@ out/
 # production
 build
 dist
+dist-electron
 .env
+
+# electron
+App/electron/*.js
+App/electron/*.js.map
 
 # misc
 .DS_Store
