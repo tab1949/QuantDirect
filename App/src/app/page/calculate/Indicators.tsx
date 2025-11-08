@@ -47,7 +47,7 @@ function BOLL(): Indicator {
                         const dif = (args.data[k].close - ma); 
                         sum += dif * dif;
                     }
-                    const root = Math.sqrt(sum / duration);
+                    const root = Math.sqrt(sum / (duration - 1));
                     ret[1].push(ma + 2 * root);
                     ret[2].push(ma - 2 * root);
                 }
