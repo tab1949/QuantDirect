@@ -5,7 +5,7 @@ import styled from "styled-components";
 import TimeDisplay from "./TimeDisplay";
 import * as FetchData from "./FetchData";
 import { HorizontalLine, Title1, Title2, InlineT3, ScrollList, ListItem, Div } from "../components/BasicLayout";
-import CandleStickChart from "../components/CandleStickChart";
+import { ChartContainer } from "../components/ChartContainer";
 import { useState, useEffect, useCallback, useRef } from "react";
 
 interface ViewAreaProps {
@@ -231,7 +231,11 @@ function FuturesContent({ exchange }: FuturesContentProps) {
                     height: '70%',
                     width: '60%'
                 }}>
-                    <CandleStickChart data={data}></CandleStickChart>
+                    <ChartContainer 
+                        $data={data} $layout='single'
+                        $components={[{
+                            type: 'CandleStickChart',
+                        }]}/>
                 </Div>: <Title1>{t('no_data')}</Title1>}
             </div>
         </div>

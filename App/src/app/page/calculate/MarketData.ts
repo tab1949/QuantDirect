@@ -69,7 +69,7 @@ export class CandleStickChartData {
 export const PERIOD_OPTIONS = [
     '1min', '3min', '5min', '15min', 
     '30min', '60min',
-    '1day', '3day', '1week', '1month', '1quarter', '1year'
+    '1day', '1week', '1month', '1year'
 ];
 
 // Set wider ranges to avoid special conditions
@@ -148,8 +148,51 @@ export class StaticMarketData {
             return this.dataMin;
         if (period === '1day') 
             return this.dataDay;
+        if (period === '1week')
+            return this.aggregateToWeek();
+        if (period === '1month')
+            return this.aggregateToMonth();
+        if (period === '1year')
+            return this.aggregateToYear();
+        
+        const minuteMatch = period.match(/^(\d+)min$/);
+        if (minuteMatch) {
+            const minutes = parseInt(minuteMatch[1]);
+            if (minutes >= 3 && minutes <= 60) {
+                return this.aggregateToMinutes(minutes);
+            }
+        }
         
         return new CandleStickChartData();
+    }
+
+    private aggregateToMinutes(periodMinutes: number): CandleStickChartData {
+        const result = new CandleStickChartData();
+        if (this.dataMin.length() === 0) {
+            return result;
+        }
+
+        let begin = 0;
+        let periodStartTime = new Date(this.dataMin.data[0].time);
+
+        for (let i = 1; i < this.dataMin.length(); ++i) {
+            const currentTime = new Date(this.dataMin.data[i].time);
+            const timeDiff = (currentTime.getTime() - periodStartTime.getTime()) / (60000);
+
+            if (timeDiff >= periodMinutes) {
+                const timeStr = this.dataMin.data[begin].time;
+                result.push(this.aggregate(this.dataMin.data, begin, i - 1, timeStr));
+                begin = i;
+                periodStartTime = currentTime;
+            }
+        }
+
+        if (begin < this.dataMin.length()) {
+            const timeStr = this.dataMin.data[begin].time;
+            result.push(this.aggregate(this.dataMin.data, begin, this.dataMin.length() - 1, timeStr));
+        }
+
+        return result;
     }
 
     // only invoked in constructor
@@ -230,6 +273,107 @@ export class StaticMarketData {
             if (data[i].low < ret.low) ret.low = data[i].low;
         }
         return ret;
+    }
+
+    private aggregateToWeek(): CandleStickChartData {
+        const result = new CandleStickChartData();
+        if (this.dataDay.length() === 0) {
+            return result;
+        }
+
+        const getWeekKey = (date: Date): string => {
+            const year = date.getFullYear();
+            const weekNum = this.getWeekNumber(date);
+            return `${year}-W${String(weekNum).padStart(2, '0')}`;
+        };
+
+        let begin = 0;
+        let lastWeekKey = getWeekKey(new Date(this.dataDay.data[0].time));
+
+        for (let i = 1; i < this.dataDay.length(); ++i) {
+            const currentWeekKey = getWeekKey(new Date(this.dataDay.data[i].time));
+            if (currentWeekKey !== lastWeekKey) {
+                const timeStr = this.dataDay.data[begin].time;
+                result.push(this.aggregate(this.dataDay.data, begin, i - 1, timeStr));
+                begin = i;
+                lastWeekKey = currentWeekKey;
+            }
+        }
+
+        if (begin < this.dataDay.length()) {
+            const timeStr = this.dataDay.data[begin].time;
+            result.push(this.aggregate(this.dataDay.data, begin, this.dataDay.length() - 1, timeStr));
+        }
+
+        return result;
+    }
+
+    private aggregateToMonth(): CandleStickChartData {
+        const result = new CandleStickChartData();
+        if (this.dataDay.length() === 0) {
+            return result;
+        }
+
+        const getMonthKey = (date: Date): string => {
+            const year = date.getFullYear();
+            const month = date.getMonth() + 1;
+            return `${year}-${String(month).padStart(2, '0')}`;
+        };
+
+        let begin = 0;
+        let lastMonthKey = getMonthKey(new Date(this.dataDay.data[0].time));
+
+        for (let i = 1; i < this.dataDay.length(); ++i) {
+            const currentMonthKey = getMonthKey(new Date(this.dataDay.data[i].time));
+            if (currentMonthKey !== lastMonthKey) {
+                const timeStr = this.dataDay.data[begin].time;
+                result.push(this.aggregate(this.dataDay.data, begin, i - 1, timeStr));
+                begin = i;
+                lastMonthKey = currentMonthKey;
+            }
+        }
+
+        if (begin < this.dataDay.length()) {
+            const timeStr = this.dataDay.data[begin].time;
+            result.push(this.aggregate(this.dataDay.data, begin, this.dataDay.length() - 1, timeStr));
+        }
+
+        return result;
+    }
+
+    private aggregateToYear(): CandleStickChartData {
+        const result = new CandleStickChartData();
+        if (this.dataDay.length() === 0) {
+            return result;
+        }
+
+        let begin = 0;
+        let lastYear = new Date(this.dataDay.data[0].time).getFullYear();
+
+        for (let i = 1; i < this.dataDay.length(); ++i) {
+            const currentYear = new Date(this.dataDay.data[i].time).getFullYear();
+            if (currentYear !== lastYear) {
+                const timeStr = this.dataDay.data[begin].time;
+                result.push(this.aggregate(this.dataDay.data, begin, i - 1, timeStr));
+                begin = i;
+                lastYear = currentYear;
+            }
+        }
+
+        if (begin < this.dataDay.length()) {
+            const timeStr = this.dataDay.data[begin].time;
+            result.push(this.aggregate(this.dataDay.data, begin, this.dataDay.length() - 1, timeStr));
+        }
+
+        return result;
+    }
+
+    private getWeekNumber(date: Date): number {
+        const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+        const dayNum = d.getUTCDay() || 7;
+        d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+        const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+        return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
     }
     
 }

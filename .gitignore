@@ -4,6 +4,7 @@
 Server/data_backup
 archived
 *.local.*
+*.old
 
 # redis
 *.rdb

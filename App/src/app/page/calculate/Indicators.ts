@@ -65,10 +65,10 @@ function BOLL(): Indicator {
 function EXPMA(): Indicator {
     return new Indicator("EXPMA", "Exponential Moving Average", 
         [
-            {param: 5, describe: "EXPMA5", display: IndicatorDisplay.LINE, style: {color: '#d025ff', weight: '1'}},
-            {param: 10, describe: "EXPMA10", display: IndicatorDisplay.LINE, style: {color: '#25afff', weight: '1'}},
-            {param: 20, describe: "EXPMA20", display: IndicatorDisplay.LINE, style: {color: '#c8ff25', weight: '1'}},
-            {param: 30, describe: "EXPMA30", display: IndicatorDisplay.LINE, style: {color: '#25ffb3', weight: '1'}},
+            {param: 5, describe: "EMA5", display: IndicatorDisplay.LINE, style: {color: '#d025ff', weight: '1'}},
+            {param: 10, describe: "EMA10", display: IndicatorDisplay.LINE, style: {color: '#25afff', weight: '1'}},
+            {param: 20, describe: "EMA20", display: IndicatorDisplay.LINE, style: {color: '#c8ff25', weight: '1'}},
+            {param: 30, describe: "EMA30", display: IndicatorDisplay.LINE, style: {color: '#25ffb3', weight: '1'}},
         ],
         "preset",
         (args: CandleStickChartData, param: IndicatorResultParam[]): IndicatorValue[] => {
