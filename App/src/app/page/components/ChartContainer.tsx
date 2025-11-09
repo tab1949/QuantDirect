@@ -1,61 +1,36 @@
 import { useState, useEffect, useRef, useCallback, useMemo, PointerEventHandler, WheelEventHandler, memo } from "react";
 import { useTranslation } from "react-i18next";
 
-import { StaticMarketData, PERIOD_OPTIONS, CandleStickChartData, } from '../calculate/MarketData';
-import { CandleStickChart } from "./CandleStickChart";
+import { StaticMarketData, PERIOD_OPTIONS } from '../calculate/MarketData';
+import { CandleStickChart, CandleStickChartContentInterface } from "./CandleStickChart";
+import { BarChart, BarChartContentInterface } from "./BarChart";
 
 interface ChartData {
     fields: string[];
     data: Array<Array<number|string>>;
 };
 
+interface ContainerComponent {
+    description?: string;
+    type: 'CandleStickChart' | 'BarChart';
+    position?: {
+        group?: number;
+        left?: number;
+        top?: number;
+        width?: number;
+        height?: number;
+    }
+};
+
 interface ContainerInterface {
     $data: ChartData;
     $layout: 'single' | 'vertical' | 'horizontal' | 'free';
     $primary?: number;
-    $components: {
-        type: 'CandleStickChart' | '';
-        position?: {
-            group: number;
-            left: number;
-            top: number;
-            width: number;
-            height: number;
-        }
-    }[];
-};
-
-export interface ContentInterface {
-    data: {
-        data: CandleStickChartData;
-        max: number;
-        min: number;
-    };
-    displayRange: {
-        begin: number;
-        end: number;
-    };
-    fontSize: number;
-    position: {
-        left: number;
-        top: number;
-        width: number;
-        height: number;
-    };
-    offset: {
-        left: number;
-        top: number;
-        bottom: number;
-        right?: number;
-    }
-    aim?: {
-        x: number;
-        y: number;
-    }
+    $components: ContainerComponent[];
 };
 
 const offset = {
-    top: 30,
+    top: 25,
     left: 80,
     right: 0,
     bottom: 60
@@ -90,7 +65,7 @@ export const ChartContainer = memo(function ChartContainerImpl(param: ContainerI
     const [displayRange, setDisplayRange] = useState({begin: 0, end: 0});
     const [duration, setDuration] = useState('1day');
     const [displayAim, setDisplayAim] = useState(false);
-    const [menuOpen, setMenuOpen] = useState(true);
+    const [menuOpen, setMenuOpen] = useState(false);
     const [aimPos, setAimPos] = useState({x: 0, y: 0});
     const [dragging, setDragging] = useState(false);
     const [oldPos, setOldPos] = useState({x: 0, y: 0});
@@ -303,39 +278,131 @@ export const ChartContainer = memo(function ChartContainerImpl(param: ContainerI
     const { t } = useTranslation('explore');
 
     const components = useMemo(() => {
+        const chartH = dimensions.h - offset.top - offset.bottom;
+        const fontSize = chartH / 25 < 16 ? chartH / 25 : 16;
+        const primaryIndex = param.$primary !== undefined ? param.$primary : 0;
+        
         switch (param.$layout) {
         case 'single':
             if (param.$components.length !== 1)
                 throw "Chart Combination with layout 'single' can only have one component.";
-            
-            const chartH = dimensions.h - offset.top - offset.bottom;
-            
-            const fontSize = chartH / 25 < 16 ? chartH / 25 : 16;
-            
-            const props: ContentInterface = {
-                data: {
-                    data: data,
-                    max: max,
-                    min: min
-                },
-                displayRange: displayRange,
-                fontSize: fontSize,
-                position: {
-                    left: 0,
-                    top: 0,
-                    width: dimensions.w,
-                    height: dimensions.h - offset.top
-                },
-                offset: offset,
-                aim: displayAim? aimPos: undefined
-            };
             switch(param.$components[0].type) {
             case 'CandleStickChart':
+                const props: CandleStickChartContentInterface = {
+                    data: {
+                        data: data,
+                        max: max,
+                        min: min
+                    },
+                    displayRange: displayRange,
+                    fontSize: fontSize,
+                    position: {
+                        left: 0,
+                        top: 0,
+                        width: dimensions.w,
+                        height: dimensions.h - offset.top
+                    },
+                    offset: offset,
+                    aim: displayAim? aimPos: undefined
+                };
                 return <CandleStickChart param={props}/>
             }
             break;
-        case 'vertical':
-            break;
+        case 'vertical': {
+            const totalHeight = dimensions.h - offset.top - offset.bottom;
+            
+            const componentHeights: number[] = [];
+            let specifiedHeightSum = 0;
+            let unspecifiedCount = 0;
+            
+            param.$components.forEach((comp) => {
+                if (comp.position?.height !== undefined) {
+                    const height = totalHeight * comp.position.height;
+                    componentHeights.push(height);
+                    specifiedHeightSum += height;
+                } else {
+                    componentHeights.push(0);
+                    unspecifiedCount++;
+                }
+            });
+            
+            const remainingHeight = Math.max(0, totalHeight - specifiedHeightSum);
+            const avgHeight = unspecifiedCount > 0 ? remainingHeight / unspecifiedCount : 0;
+            
+            componentHeights.forEach((height, idx) => {
+                if (height === 0) {
+                    componentHeights[idx] = avgHeight;
+                }
+            });
+            
+            return param.$components.map(
+                (val: ContainerComponent, index: number) => {
+                    const componentHeight = componentHeights[index];
+                    const isPrimary = index === primaryIndex;
+                    const componentAim = displayAim ? (isPrimary ? aimPos : { x: aimPos.x, y: 0 }) : undefined;
+                    
+                    switch(val.type) {
+                    case 'CandleStickChart': {
+                        const componentProps: CandleStickChartContentInterface = {
+                            data: {
+                                data: data,
+                                max: max,
+                                min: min
+                            },
+                            displayRange: displayRange,
+                            fontSize: fontSize,
+                            position: {
+                                top: 0,
+                                height: componentHeight + (index == 0 ? offset.bottom : 0),
+                                left: 0,
+                                width: dimensions.w
+                            },
+                            offset: {
+                                ...offset,
+                                bottom: index == 0 ? offset.bottom : 20
+                            },
+                            aim: componentAim
+                        };
+                        
+                        return <CandleStickChart key={index} param={componentProps}/>;
+                    }
+                    case 'BarChart': {
+                        const timeLabels: string[] = [];
+                        
+                        if (data.length() > 0) {
+                            for (let i = 0; i < data.length(); ++i) {
+                                timeLabels.push(data.data[i].time || '');
+                            }
+                        }
+                        
+                        const componentProps: BarChartContentInterface = {
+                            data: rawData,
+                            period: duration,
+                            timeLabels: timeLabels,
+                            displayRange: displayRange,
+                            fontSize: fontSize,
+                            position: {
+                                left: 0,
+                                top: 0,
+                                width: dimensions.w,
+                                height: componentHeight + (index == 0 ? offset.bottom : 0),
+                            },
+                            offset: {
+                                ...offset,
+                                bottom: index == 0 ? offset.bottom : 20
+                            },
+                            aim: componentAim,
+                            showXAxis: index == 0
+                        };
+                        
+                        return <BarChart key={index} param={componentProps}/>;
+                    }
+                    default:
+                        return null;
+                    }
+                }
+            );
+        }
         case 'horizontal':
             break;
         case 'free':
@@ -431,7 +498,8 @@ export const ChartContainer = memo(function ChartContainerImpl(param: ContainerI
                                         color: 'var(--theme-chart-border-color)',
                                         border: 'none',
                                         borderRadius: '2px',
-                                        padding: '4px 8px',
+                                        paddingLeft: '0.5rem',
+                                        paddingRight: '0.5rem',
                                         fontSize: '0.7rem',
                                         cursor: 'pointer',
                                         outline: 'none',

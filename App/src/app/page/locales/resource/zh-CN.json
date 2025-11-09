@@ -9,7 +9,15 @@
         "dark": "深色",
         "light": "浅色",
         "language": "语言",
-        "intro": "QuantDirect - 量化研究者分析和交流的平台"
+        "intro": "QuantDirect - 量化研究者分析和交流的平台",
+        "indicators": {
+            "NONE": "不显示",
+            "MA": "移动平均线",
+            "BOLL": "布林带",
+            "EXPMA": "指数移动平均线",
+            "TURNOVER": "成交量",
+            "AMOUNT": "成交额"
+        }
     },
     "home": {
         "welcome": "欢迎"

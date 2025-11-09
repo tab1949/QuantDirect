@@ -9,7 +9,15 @@
         "dark": "Dark",
         "light": "Light",
         "language": "Language",
-        "intro": "QuantDirect - A platform for quant researchers to analysis and communicate."
+        "intro": "QuantDirect - A platform for quant researchers to analysis and communicate.",
+        "indicators": {
+            "NONE": "None",
+            "MA": "Moving Average",
+            "BOLL": "Bollinger Bands",
+            "EXPMA": "Exponential Moving Average",
+            "TURNOVER": "Turnover",
+            "AMOUNT": "Amount"
+        }
     },
     "home": {
         "welcome": "Welcome"

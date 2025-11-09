@@ -1,9 +1,38 @@
 import { useState, useEffect, useMemo, ReactElement, memo } from "react";
 import { useTranslation } from "react-i18next";
 
-import { ContentInterface } from "./ChartContainer";
-import { CandleStickChartData, INDICATOR_OPTIONS, Indicator, IndicatorDisplay } from '../calculate/MarketData';
+import { CandleStickChartData, MAIN_CHART_INDICATOR_OPTIONS, Indicator, IndicatorDisplay } from '../calculate/MarketData';
 import * as Indicators from "../calculate/Indicators";
+
+export interface CandleStickChartContentInterface {
+    data: {
+        data: CandleStickChartData;
+        max: number;
+        min: number;
+    };
+    displayRange: {
+        begin: number;
+        end: number;
+    };
+    fontSize: number;
+    position: {
+        left: number;
+        top: number;
+        width: number;
+        height: number;
+    };
+    offset: {
+        left: number;
+        top: number;
+        bottom: number;
+        right?: number;
+    }
+    aim?: {
+        x: number;
+        y: number;
+    }
+    showXAxis?: boolean;
+};
 
 const validateChartData = (data: CandleStickChartData, displayRange: {begin: number, end: number}) => {
     if (!data || data.length() === 0) return false;
@@ -18,10 +47,9 @@ const validateChartData = (data: CandleStickChartData, displayRange: {begin: num
 
 const AIM_INFO_FIELDS = ['time','open', 'close', 'high', 'low', 'volume', 'amount', 'open_interest'];
 
-export const CandleStickChart = memo(function ContentImpl({ param }: {param: ContentInterface}) {
+export const CandleStickChart = memo(function ContentImpl({ param }: {param: CandleStickChartContentInterface}) {
     const offset = param.offset;
     const displayRange = param.displayRange;
-    const { t } = useTranslation('explore');
     const yScaleCount = 4;
     const [indicatorName, setIndicatorName] = useState('MA');
     const [indicatorValueText, setIndicatorValueText] = useState<string[]>([]);
@@ -31,6 +59,7 @@ export const CandleStickChart = memo(function ContentImpl({ param }: {param: Con
     const svgH = param.position.height - offset.top - offset.bottom;
     const bottomH = offset.bottom;
     const displayCount = displayRange.end - displayRange.begin + 1;
+    let { t } = useTranslation('explore');
 
     const indicator = useMemo<Indicator>(() => {
         return Indicators.GetIndicatorByName(indicatorName) as Indicator;
@@ -149,7 +178,7 @@ export const CandleStickChart = memo(function ContentImpl({ param }: {param: Con
         const dataRange = p.data.high - p.data.low;
         const unitY = (dataRange > 0? svgH / dataRange: 0);
         const width = svgW / displayCount;
-        const bodyWidth = displayCount >= 50 ? width * 0.2 : width * 0.5;
+        const bodyWidth = displayCount >= 70 ? width * 0.2 : width * 0.65;
         const sample = (displayCount <= 5? 1: Math.round(displayCount/10));
         const labelY = svgH + offset.bottom * 0.2 + 20 + p.fontSize;
 
@@ -289,7 +318,7 @@ export const CandleStickChart = memo(function ContentImpl({ param }: {param: Con
         setIndicatorValueText(iv);
     }, [aimPos, displayRange, indicator.param.length, indicator.data, svgW, displayCount]);
 
-
+    t = useTranslation('basic').t;
     return <div style={{
         position: 'relative',
         left: `${param.position.left}px`,
@@ -314,7 +343,8 @@ export const CandleStickChart = memo(function ContentImpl({ param }: {param: Con
                 display: 'flex',
                 alignItems: 'center',
                 gap: '15px',
-                height: '100%'
+                height: '100%',
+                width: '100%'
             }}>
                 <select 
                     value={indicatorName}
@@ -333,20 +363,20 @@ export const CandleStickChart = memo(function ContentImpl({ param }: {param: Con
                         width: 'fit-content',
                         height: '80%'
                     }}>
-                    {INDICATOR_OPTIONS.map(option => (
+                    {MAIN_CHART_INDICATOR_OPTIONS.map(option => (
                         <option key={option} value={option} style={{
                             backgroundColor: 'var(--theme-chart-bg-color)',
                             color: 'var(--theme-chart-scale-color)'
                         }}>
-                            {option}
+                            {t(`indicators.${option}`)}
                         </option>
                     ))}
                 </select>
                 <div style={{
-                    fontSize: `${p.fontSize}px`
+                    fontSize: '0.8rem'
                 }}>
                     {aimPos && aimPos.y > offset.top && indicatorValueDesc.map((desc, index) => (
-                        <span key={`indicator-value-desc-${index}`} style={{color: indicator.param[index].style.color}}>
+                        <span key={`indicator-value-desc-${index}`} style={indicator.param[index] && indicator.param[index].style ? {color: indicator.param[index].style.color} : {}}>
                             {desc}: {indicatorValueText[index]};
                         </span>
                     ))}

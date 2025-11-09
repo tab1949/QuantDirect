@@ -232,9 +232,14 @@ function FuturesContent({ exchange }: FuturesContentProps) {
                     width: '60%'
                 }}>
                     <ChartContainer 
-                        $data={data} $layout='single'
+                        $data={data} $layout='vertical'
                         $components={[{
                             type: 'CandleStickChart',
+                            position: {
+                                height: 0.7
+                            }
+                        }, {
+                            type: 'BarChart',
                         }]}/>
                 </Div>: <Title1>{t('no_data')}</Title1>}
             </div>

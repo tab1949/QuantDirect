@@ -80,6 +80,27 @@ function EXPMA(): Indicator {
         }
     );
 }
+
+function TURNOVER(): Indicator {
+    return new Indicator("TURNOVER", "Turnover", 
+        [{describe: "TURNOVER", display: IndicatorDisplay.BAR, style: {color: '#25ffb3', weight: '1'}}],
+        "preset",
+        (args: CandleStickChartData, param: IndicatorResultParam[]): IndicatorValue[] => {
+            return [args.Turnover()];
+        }
+    );
+}
+
+function AMOUNT(): Indicator {
+    return new Indicator("AMOUNT", "Amount", 
+        [{describe: "AMOUNT", display: IndicatorDisplay.BAR, style: {color: '#25ffb3', weight: '1'}}],
+        "preset",
+        (args: CandleStickChartData, param: IndicatorResultParam[]): IndicatorValue[] => {
+            return [args.Amount()];
+        }
+    );
+}
+
 export function GetIndicatorByName(name: string): Indicator|undefined {
     switch(name.toUpperCase()) {
     case 'MA':
@@ -88,6 +109,10 @@ export function GetIndicatorByName(name: string): Indicator|undefined {
         return BOLL();
     case "EXPMA":
         return EXPMA();
+    case "TURNOVER":
+        return TURNOVER();
+    case "AMOUNT":
+        return AMOUNT();
     default:
         return NONE();
     }

@@ -64,6 +64,22 @@ export class CandleStickChartData {
         }
         return ret;
     }
+
+    public Turnover(): number[] { // Turnover
+        const ret: number[] = [];
+        for (let i = 0; i < this.data.length; ++i) {
+            ret.push(this.data[i].volume);
+        }
+        return ret;
+    }
+
+    public Amount(): number[] { // Amount
+        const ret: number[] = [];
+        for (let i = 0; i < this.data.length; ++i) {
+            ret.push(this.data[i].amount);
+        }
+        return ret;
+    }
 };
 
 export const PERIOD_OPTIONS = [
@@ -378,8 +394,12 @@ export class StaticMarketData {
     
 }
 
-export const INDICATOR_OPTIONS = [
-    'MA', 'EXPMA', 'BOLL'
+export const MAIN_CHART_INDICATOR_OPTIONS = [
+    'NONE', 'MA', 'EXPMA', 'BOLL'
+];
+
+export const SUB_CHART_INDICATOR_OPTIONS = [
+    'TURNOVER', 'AMOUNT'
 ];
 
 export enum IndicatorDisplay {
