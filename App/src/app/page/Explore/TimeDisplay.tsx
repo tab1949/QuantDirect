@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from "react";
-import { InlineT2, InlineT3 } from "../components/BasicLayout";
+import { InlineT2, InlineT3 } from "../../components/BasicLayout";
 import { useTranslation } from "react-i18next";
 
 interface TimeDisplayProps {

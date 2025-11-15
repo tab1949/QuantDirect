@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { InlineT1 } from "../components/BasicLayout";
+import { InlineT1 } from "../../components/BasicLayout";
 
 export default function HomePage() {
     const {t} = useTranslation();

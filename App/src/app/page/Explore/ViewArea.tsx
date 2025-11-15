@@ -4,8 +4,8 @@ import { useTranslation } from "react-i18next";
 import styled from "styled-components";
 import TimeDisplay from "./TimeDisplay";
 import * as FetchData from "./FetchData";
-import { HorizontalLine, Title1, Title2, InlineT3, ScrollList, ListItem, Div } from "../components/BasicLayout";
-import { ChartContainer } from "../components/ChartContainer";
+import { HorizontalLine, Title1, Title2, InlineT3, ScrollList, ListItem, Div } from "../../components/BasicLayout";
+import { ChartContainer } from "../../components/ChartContainer";
 import { useState, useEffect, useCallback, useRef } from "react";
 
 interface ViewAreaProps {

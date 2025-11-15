@@ -277,9 +277,11 @@ export const CandleStickChart = memo(function ContentImpl({ param }: {param: Can
         const y = aimPos.y - offset.top;
         const value = p.data.high - (p.data.high - p.data.low) * (y / svgH);
         ret.push(<line key="aim-v" x1={x} x2={x} y1={0} y2={svgH + offset.top + bottomH} stroke={'var(--theme-chart-scale-color)'} strokeWidth={'1px'}/>);
-        ret.push(<line key="aim-h" x1={offset.left} x2={offset.left + svgW} y1={y} y2={y} stroke={'var(--theme-chart-scale-color)'} strokeWidth={'1px'}/>);
-        ret.push(<rect key="aim-indicator" x={5} y={y-p.fontSize/2-2} height={p.fontSize+4} width={offset.left - 5} stroke={'var(--theme-chart-scale-color)'} strokeWidth={'1px'} fill="var(--theme-chart-bg-color)"/>);
-        ret.push(<text key="aim-indicator-text" x={6} y={y+p.fontSize/2-2} fill={'var(--theme-chart-scale-color)'} fontSize={p.fontSize}>{value.toFixed(2)}</text>);
+        if(aimPos.y < offset.top + svgH) {
+            ret.push(<line key="aim-h" x1={offset.left} x2={offset.left + svgW} y1={y} y2={y} stroke={'var(--theme-chart-scale-color)'} strokeWidth={'1px'}/>);
+            ret.push(<rect key="aim-indicator" x={5} y={y-p.fontSize/2-2} height={p.fontSize+4} width={offset.left - 5} stroke={'var(--theme-chart-scale-color)'} strokeWidth={'1px'} fill="var(--theme-chart-bg-color)"/>);
+            ret.push(<text key="aim-indicator-text" x={6} y={y+p.fontSize/2-2} fill={'var(--theme-chart-scale-color)'} fontSize={p.fontSize}>{value.toFixed(2)}</text>);
+        }
         let infoX = offset.left;
         const infoWidth = p.fontSize * 11;
         if (x < offset.left + svgW / 2)

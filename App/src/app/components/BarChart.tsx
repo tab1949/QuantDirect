@@ -174,7 +174,7 @@ export const BarChart = memo(function ContentImpl({ param }: {param: BarChartCon
         
         const unitY = (p.max > 0? svgH / p.max: 0);
         const width = svgW / displayCount;
-        const barWidth = displayCount >= 50 ? width * 0.1 : width * 0.2;
+        const barWidth = displayCount >= 50 ? width * 0.4 : width * 0.6;
         const sample = (displayCount <= 5? 1: Math.round(displayCount/10));
         const labelY = svgH + offset.bottom * 0.2 + 20 + p.fontSize;
 

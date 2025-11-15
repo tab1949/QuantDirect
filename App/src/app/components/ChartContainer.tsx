@@ -409,7 +409,7 @@ export const ChartContainer = memo(function ChartContainerImpl(param: ContainerI
             break;
         }
         return <></>;
-    }, [param, data, max, min, dimensions, displayAim, aimPos, displayRange]);
+    }, [param, data, max, min, dimensions, displayAim, aimPos, displayRange, duration, rawData]);
 
     return <div ref={containerRef} 
         onPointerDown={onPointerDown} 

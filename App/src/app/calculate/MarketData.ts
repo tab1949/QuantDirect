@@ -437,10 +437,10 @@ class IndicatorCalc {
 export class Indicator {
     public readonly name: string;
     public readonly description?: string;
-    public readonly param: IndicatorResultParam[];
+    public readonly param: IndicatorResultParam[]; // Its length determines how many indicators to display
     public readonly calc: IndicatorCalc;
     public readonly source: 'preset' | 'custom';
-    public data: IndicatorValue[];
+    public data: IndicatorValue[]; // It is a 2-dimension array, with 'param.length' arrays containing N items. (N = length of source data) 
 
     constructor(
         name: string, 
@@ -455,12 +455,6 @@ export class Indicator {
         this.param = param;
         this.source = source;
         this.data = [];
-    }
-
-    public toString(): string {
-        let ret: string = '';
-        ret = '';
-        return ret;
     }
 
     public updateData(data: CandleStickChartData) {

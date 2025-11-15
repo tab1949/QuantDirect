@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import SettingsIcon from "./SVGIcons";
 import ExplorePage from "./Explore/ExplorerPage";
 import HomePage from "./Home/Page";
-import { langName, supportedLang, languages } from "./locales/client-i18n";
+import { langName, supportedLang, languages } from "../locales/client-i18n";
 import {
   Page, 
   CommonHeader, 
@@ -16,7 +16,7 @@ import {
   CommonBody, 
   CommonFooter,
   SettingsMenuL2
-} from "./components/BasicLayout";
+} from "../components/BasicLayout";
 
 export default function BasicLayout() {
   const { t, i18n } = useTranslation();
@@ -25,7 +25,7 @@ export default function BasicLayout() {
   const [settingsL2Opened, setSettingsL2Opened] = useState(false);
   const [settingsL2Type, setSettingsL2Type] = useState('');
   const [selected, setSelected] = useState({
-    home: true, explore: false, analysis: false, community: false, help: false, dashboard: false, settings: false
+    home: true, explore: false, research: false, community: false, help: false, dashboard: false, settings: false
   });
 
   type Selected = typeof selected;
@@ -36,7 +36,7 @@ export default function BasicLayout() {
       home: false,
       help: nav === 'help',
       community: nav === 'community',
-      analysis: nav === 'analysis',
+      research: nav === 'research',
       explore: nav === 'explore',
       dashboard: nav === 'dashboard'
     }));
@@ -47,7 +47,7 @@ export default function BasicLayout() {
       ...prev, 
       home: true,
       explore: false,
-      analysis: false,
+      research: false,
       community: false,
       dashboard: false,
       help: false
@@ -126,8 +126,8 @@ export default function BasicLayout() {
             {t('basic.explore')}
           </HeaderElement>
 
-          <HeaderElement $selected={selected.analysis} onClick={() => switchPage('analysis')}>
-            {t('basic.analysis')}
+          <HeaderElement $selected={selected.research} onClick={() => switchPage('research')}>
+            {t('basic.research')}
           </HeaderElement>
 
           <HeaderElement $selected={selected.community} onClick={() => switchPage('community')}>

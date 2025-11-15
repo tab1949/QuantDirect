@@ -76,7 +76,7 @@ export async function GetContractInfoByAsset(name: string, exchange: string): Pr
         list_date: i[11],
         delist_date: i[12],
         d_month: i[13],
-        trade_time_desc: i[14]
+        trade_time_desc: ''//i[15]
         });
     }
     contractInfo.set(name, info);
