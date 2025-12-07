@@ -1,7 +1,11 @@
 import { CandleStickChartData, Indicator, IndicatorValue, IndicatorDisplay, IndicatorResultParam } from "./MarketData";
 
 function NONE(): Indicator {
-    return new Indicator("", "", [], "preset", (args: CandleStickChartData, param: IndicatorResultParam[]): IndicatorValue[] => {return []});
+    return new Indicator("", "", [], "preset", (args: CandleStickChartData, param: IndicatorResultParam[]): IndicatorValue[] => {
+        void args;
+        void param;
+        return [];
+    });
 }
  
 function MA(): Indicator {
@@ -31,6 +35,7 @@ function BOLL(): Indicator {
         ],
         "preset",
         (args: CandleStickChartData, param: IndicatorResultParam[]): IndicatorValue[] => {
+            void param;
             const ret: IndicatorValue[] = [[], [], []];
             const duration = 20;
             if (args.length() < duration)
@@ -86,6 +91,7 @@ function TURNOVER(): Indicator {
         [{describe: "TURNOVER", display: IndicatorDisplay.BAR, style: {color: '#25ffb3', weight: '1'}}],
         "preset",
         (args: CandleStickChartData, param: IndicatorResultParam[]): IndicatorValue[] => {
+            void param;
             return [args.Turnover()];
         }
     );
@@ -96,6 +102,7 @@ function AMOUNT(): Indicator {
         [{describe: "AMOUNT", display: IndicatorDisplay.BAR, style: {color: '#25ffb3', weight: '1'}}],
         "preset",
         (args: CandleStickChartData, param: IndicatorResultParam[]): IndicatorValue[] => {
+            void param;
             return [args.Amount()];
         }
     );

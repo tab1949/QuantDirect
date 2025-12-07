@@ -12,5 +12,11 @@ export const GlobalStyle = createGlobalStyle`
     html, body {
         height: 100%;
         width: 100%;
+        background-color: #0f0f0f;
+        color: #ffffff;
+    }
+
+    body {
+        overflow: hidden;
     }
 `;

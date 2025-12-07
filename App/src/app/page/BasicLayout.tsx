@@ -109,8 +109,7 @@ export default function BasicLayout() {
   );
 
   return (
-    <body>
-      <Page $darkMode={darkMode}>
+    <Page $darkMode={darkMode}>
         <CommonHeader $darkMode={darkMode}>
           <HeaderElement $selected={selected.home} onClick={openHome} 
             style={{
@@ -166,6 +165,5 @@ export default function BasicLayout() {
           {t('basic.intro')}
         </CommonFooter>
       </Page> 
-    </body>
   );
 }

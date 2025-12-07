@@ -2,22 +2,25 @@
   "name": "next-test",
   "version": "0.1.0",
   "private": true,
+  "main": "dist-electron/main.js",
+  "description": "QuantDirect Desktop Application",
+  "author": "tabxx",
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "node scripts/dev.mjs",
+    "dev:next": "next dev --turbopack --hostname 127.0.0.1 --port 3000",
     "build": "next build --turbopack",
-    "start": "npx serve@latest out",
+    "build:electron": "node scripts/build-electron.mjs",
+    "package": "node scripts/package.mjs",
+    "start": "node scripts/start.mjs",
+    "start:next": "next start --hostname 127.0.0.1 --port 3210",
     "lint": "eslint"
   },
   "dependencies": {
-    "axios": "^1.12.2",
     "i18next": "^25.5.2",
-    "i18next-browser-languagedetector": "^8.2.0",
-    "i18next-http-backend": "^3.0.2",
     "next": "15.5.2",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-i18next": "^16.0.0",
-    "recharts": "^3.1.2",
     "styled-components": "^6.1.19"
   },
   "devDependencies": {
@@ -25,8 +28,78 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "electron": "^32.2.0",
+    "electron-builder": "^24.13.3",
     "eslint": "^9",
     "eslint-config-next": "15.5.2",
     "typescript": "^5"
+  },
+  "build": {
+    "appId": "net.tabxx.quantdirect",
+    "productName": "QuantDirect",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist-electron/**/*",
+      "out/**/*",
+      "package.json"
+    ],
+    "extraMetadata": {
+      "main": "dist-electron/main.js"
+    },
+    "asar": true,
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "QuantDirect-${version}-${os}-${arch}.${ext}",
+      "publisherName": "tabxx"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "tar.gz",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "QuantDirect-${version}-${os}-${arch}.${ext}",
+      "category": "Finance",
+      "maintainer": "tabxx",
+      "synopsis": "QuantDirect Desktop Application",
+      "desktop": {
+        "Name": "QuantDirect",
+        "Comment": "QuantDirect Desktop Application",
+        "Type": "Application",
+        "Categories": "Office;Finance;",
+        "Terminal": false
+      }
+    },
+    "nsis": {
+      "artifactName": "QuantDirect-${version}-Setup.${ext}"
+    },
+    "portable": {
+      "artifactName": "QuantDirect-${version}-portable.${ext}"
+    }
   }
 }

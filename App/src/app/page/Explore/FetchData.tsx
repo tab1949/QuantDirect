@@ -1,32 +1,53 @@
-import axios from 'axios';
-
 const api_base = 'http://localhost:888/api';
-const contractInfo = new Map;
+const REQUEST_TIMEOUT = 2000;
+const contractInfo = new Map<string, ContractInfo[]>();
+
+interface FetchOptions {
+    allowNotFound?: boolean;
+}
+
+async function fetchJson<T>(url: string, options: FetchOptions = {}): Promise<T | null> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+    try {
+        const response = await fetch(url, {
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            signal: controller.signal
+        });
+
+        if (response.status === 404 && options.allowNotFound) {
+            return null;
+        }
+
+        if (!response.ok) {
+            throw new Error(`Request failed with status ${response.status}`);
+        }
+
+        return (await response.json()) as T;
+    } catch (error) {
+        if ((error as Error)?.name === 'AbortError') {
+            throw new Error('Request timed out');
+        }
+        throw error;
+    } finally {
+        clearTimeout(timeoutId);
+    }
+}
 
 export async function GetSubjectAssets(exchange: string): Promise<{code: string, name: string}[]> {
-    const response = await axios.get<{code: string, name: string}[]>(
-        `${api_base}/futures/contract/assets/${exchange}`,
-        {
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            timeout: 2000,
-        }
+    const data = await fetchJson<{code: string, name: string}[]>(
+        `${api_base}/futures/contract/assets/${exchange}`
     );
-    return response.data;
+    return data || [];
 }
 
 export async function GetContractsList(exchange: string): Promise<string[]> {
-    const response = await axios.get<string[]>(
-        `${api_base}/futures/contract/list/${exchange}`,
-        {
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            timeout: 2000,
-        }
+    const data = await fetchJson<string[]>(
+        `${api_base}/futures/contract/list/${exchange}`
     );
-    return response.data;
+    return data || [];
 }
 
 export interface ContractInfo {
@@ -49,18 +70,15 @@ export interface ContractInfo {
 
 export async function GetContractInfoByAsset(name: string, exchange: string): Promise<ContractInfo[]> {
     if (contractInfo.has(name))
-        return contractInfo.get(name);
-    const resp = await axios.get<string[][]>(
-        `${api_base}/futures/contract/info/${name}?g&e=${exchange}`,
-        {
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            timeout: 2000,
-        }
+        return contractInfo.get(name) as ContractInfo[];
+    const resp = await fetchJson<string[][]>(
+        `${api_base}/futures/contract/info/${name}?g&e=${exchange}`
     );
     const info: ContractInfo[] = [];
-    for (const i of resp.data) {
+    if (!resp) {
+        return info;
+    }
+    for (const i of resp) {
         info.push({
         code: i[0],
         symbol: i[1], 
@@ -90,21 +108,14 @@ export interface FuturesContractData {
 
 export async function GetContractData(contract: string) : Promise<FuturesContractData|null> {
     try {
-        const response = await axios.get<FuturesContractData>(
+        const data = await fetchJson<FuturesContractData>(
             `${api_base}/futures/contract/data/${contract}`,
-            {
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                timeout: 2000,
-            }
+            { allowNotFound: true }
         );
-        return response.data;
+        return data;
     }
-    catch (e) {
-        if (axios.isAxiosError(e) && e.response?.status === 404) {
-            return null;
-        }
+    catch (_error) {
+        void _error;
         return null;
     }
 }

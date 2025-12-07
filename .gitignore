@@ -33,6 +33,7 @@ out/
 build
 dist
 dist-electron
+release
 .env
 
 # electron

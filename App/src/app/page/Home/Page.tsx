@@ -6,7 +6,8 @@ export default function HomePage() {
     return <div>
         <div style={{
             marginTop: '20px',
-            justifySelf: 'center',
+            display: 'flex',
+            justifyContent: 'center',
         }}><InlineT1>{t('home.welcome')}</InlineT1></div>
         
     </div>;

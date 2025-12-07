@@ -11,10 +11,12 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode; }>) {
   return (
     <html lang="en">
-      <GlobalStyle></GlobalStyle>
-      <StyledComponentRegistry>
-        <I18nProvider>{children}</I18nProvider>
-      </StyledComponentRegistry>
+      <body>
+        <StyledComponentRegistry>
+          <GlobalStyle />
+          <I18nProvider>{children}</I18nProvider>
+        </StyledComponentRegistry>
+      </body>
     </html>
   );
 }
