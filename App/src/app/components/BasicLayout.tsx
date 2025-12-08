@@ -15,7 +15,7 @@ export const Page = styled.div<{ $darkMode: boolean}>`
   css`animation: ${Animation.color_light_to_dark} 200ms linear 0ms 1;` :
   css`animation: ${Animation.color_dark_to_light} 200ms linear 0ms 1;`}
 
-  --header-height: calc(3vh + 25px);
+  --header-height: calc(40px);
   --theme-background-color: ${props => props.$darkMode? '#0f0f0f' : '#f1f3f4'};
   --theme-chart-bg-color: ${props => props.$darkMode? '#151515' : '#f9f9f9'};
   --theme-chart-scale-color: ${props => props.$darkMode? '#d8d8d8' : '#4c4c4c'};
@@ -39,6 +39,7 @@ export const CommonHeader = styled.div<{ $darkMode: boolean}>`
   top: 0;
   width: 100vw;
   height: var(--header-height);
+  -webkit-app-region: drag;
 `;
 
 export const HeaderElement = styled.div<{$selected: boolean}>`
@@ -62,7 +63,8 @@ export const HeaderElement = styled.div<{$selected: boolean}>`
   margin-right: 10px;
   border-width: 0;
   border-bottom: ${props => props.$selected ? "3px solid var(--theme-accent-color)": ""};
-  font-size: 19px;
+  font-size: 16px;
+  -webkit-app-region: no-drag;
   
 `;
 
@@ -79,10 +81,60 @@ export function HeaderSeparator() {
   }}/>;
 }
 
+export const WindowControls = styled.div`
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  height: 100%;
+  -webkit-app-region: no-drag;
+`;
+
+export const WindowControlButton = styled.button<{ $darkMode: boolean; $variant?: 'close'}>`
+  appearance: none;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 100%;
+  padding: 0;
+  cursor: pointer;
+  color: var(--theme-icon-color);
+  transition: background-color 150ms ease, color 150ms ease;
+
+  &:hover {
+    background-color: ${props => props.$variant === 'close'
+      ? 'rgba(239, 68, 68, 0.9)'
+      : props.$darkMode ? 'rgba(90, 100, 112, 0.35)' : 'rgba(209, 213, 219, 0.6)'};
+    color: ${props => props.$variant === 'close' ? '#ffffff' : 'var(--theme-font-color-hover)'};
+  }
+
+  &:active {
+    filter: brightness(0.95);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--theme-accent-color);
+    outline-offset: -2px;
+  }
+
+  svg {
+    width: 20px;
+    height: 20px;
+    display: block;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+`;
+
 export const CommonBody = styled.div<{ $darkMode: boolean}>`
   user-select: none;
   position: relative;
-  height: calc(97vh - 75px);
+  height: calc(100vh - 70px);
   width: 100vw;
   background-color: ${props => props.$darkMode ? 'rgba(26, 32, 44, 0.15)' : 'rgba(229, 231, 235, 0.3)'};
   border-top: 1px solid var(--theme-border-color);
@@ -97,7 +149,7 @@ export const CommonFooter = styled.div<{ $darkMode: boolean}>`
   left: 0;
   bottom: 0;
   width: 100vw;
-  height: calc(50px);
+  height: 30px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -116,7 +168,7 @@ export const SettingsMenuL1 = styled.div<{ $darkMode: boolean}>`
   width: var(--width);
   height: auto;
   top: calc(var(--header-height) + 2px);
-  right: 1px;
+  left: 1px;
   display: grid;
   grid-column: 1;
   align-items: start;
@@ -126,7 +178,7 @@ export const SettingsMenuL1 = styled.div<{ $darkMode: boolean}>`
 
 export const SettingsMenuL2 = styled(SettingsMenuL1)`
     position: fixed;
-    right: calc(var(--width) + 3px);
+    left: calc(var(--width) + 3px);
     width: auto;
     height: auto;
 `;

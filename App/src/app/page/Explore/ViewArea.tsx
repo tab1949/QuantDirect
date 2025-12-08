@@ -2,9 +2,8 @@
 
 import { useTranslation } from "react-i18next";
 import styled from "styled-components";
-import TimeDisplay from "./TimeDisplay";
 import * as FetchData from "./FetchData";
-import { HorizontalLine, Title1, Title2, InlineT3, ScrollList, ListItem, Div } from "../../components/BasicLayout";
+import { Title1, Title2, InlineT3, ScrollList, ListItem, Div } from "../../components/BasicLayout";
 import { ChartContainer } from "../../components/ChartContainer";
 import { useState, useEffect, useCallback, useRef } from "react";
 
@@ -39,6 +38,25 @@ const ContractInfoItem = styled(ListItem)`
     align-content: end;
 `;
 
+const HeaderOption = styled.div`
+    position: relative;
+    height: 100%;
+    font-size: 18px;
+    padding: 0px;
+    margin-left: 5px;
+    margin-top: 3px;
+    margin-bottom: 3px;
+    border-radius: 5px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 2px solid var(--theme-border-color);
+    &:hover {
+        background-color: var(--theme-border-color);
+        cursor: pointer;
+    }
+`;
+
 interface FuturesContentProps {
     exchange: string;
 }
@@ -49,12 +67,13 @@ function FuturesContent({ exchange }: FuturesContentProps) {
     const [selectedAsset, setSelectedAsset] = useState<{code: string, exchange: string}>({code: 'AG', exchange: 'SHF'});
     const [sortOpt, setSortOpt] = useState(1); // 0: ALL; 1: Active; 2: Most Active; 3: Continuous
     const [contracts, setContracts] = useState<FetchData.ContractInfo[]>([]);
-    const [selectedContract, setSelectedContract] = useState({});
+    const [selectedContract, setSelectedContract] = useState<FetchData.ContractInfo | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [infoContent, setInfoContent] = useState(<></>);
     const [data, setData] = useState<FetchData.FuturesContractData | null>(null);
     const contractList = useRef<string[]>([]);
+    const [viewMode, setViewMode] = useState<'market_quotation' | 'contract_info'>('market_quotation');
 
     const optionClicked = useCallback(() => {
         if (sortOpt == 1) setSortOpt(0);
@@ -141,16 +160,26 @@ function FuturesContent({ exchange }: FuturesContentProps) {
 
     })();}, [selectedContract, t]);
 
+    const toggleAssetLeftBorder = useCallback((option: string): string => {
+        return selectedAsset.code === option ? '4px solid var(--theme-font-color)' : 'none';
+    }, [selectedAsset]);
+
+    const toggleContractLeftBorder = useCallback((option: string): string => {
+        return selectedContract?.symbol === option ? '3px solid var(--theme-font-color)' : 'none';
+    }, [selectedContract]);
+
     return (
         <div style={{
+            position: "relative",
+            width: "calc(100vw - 125px)",
             display: "flex",
             flexDirection: "row",
-            height: "calc(100vh - 180px)",
-            gap: "10px",
+            height: "100%",
+            gap: "5px",
             padding: "10px"
         }}>
             <div style={{
-                width: "7rem",
+                width: "100px",
                 height: "100%",
                 borderRadius: "8px",
                 border: "2px solid var(--theme-border-color)",
@@ -164,7 +193,10 @@ function FuturesContent({ exchange }: FuturesContentProps) {
                         <SubjectListItem>{t('no_data')}</SubjectListItem>
                     ) : (
                         assets.map((asset, index) => (
-                            <SubjectListItem key={`${asset}-${index}`} onClick={()=>{setSelectedAsset({code: asset.code, exchange: exchange});}}>
+                            <SubjectListItem 
+                                key={`${asset}-${index}`} 
+                                onClick={()=>{setSelectedAsset({code: asset.code, exchange: exchange});}}
+                                style={{borderLeft: toggleAssetLeftBorder(asset.code)}}>
                                 <div>{asset.name}</div>
                                 <div style={{fontSize: '1rem', justifySelf:"end"}}>{asset.code}</div>
                             </SubjectListItem>
@@ -178,7 +210,7 @@ function FuturesContent({ exchange }: FuturesContentProps) {
                 flexDirection: 'column',
                 position: 'relative',
                 height: "100%",
-                minWidth: "6.9rem",
+                width: "120px",
                 fontSize: '1rem',
                 border: "2px solid var(--theme-border-color)",
                 borderRadius: "8px",
@@ -196,7 +228,10 @@ function FuturesContent({ exchange }: FuturesContentProps) {
                 </div>
                 <ScrollList>
                     {contracts.map((contract, index) => (
-                        <ContractListItem key={`${contract.code}-${index}`} onClick={() => {setSelectedContract(contract);}}>
+                        <ContractListItem 
+                            key={`${contract.code}-${index}`} 
+                            onClick={() => {setSelectedContract(contract);}}
+                            style={{borderLeft: toggleContractLeftBorder(contract.symbol)}}>
                             <div>{contract.name}</div>
                             <div style={{fontSize: '0.8rem'}}>{contract.symbol}</div>
                         </ContractListItem>
@@ -206,27 +241,51 @@ function FuturesContent({ exchange }: FuturesContentProps) {
 
             <div style={{
                 display: 'flex',
-                flexDirection: 'row',
+                flexDirection: 'column',
                 position: 'relative',
+                right: '0px',
                 height: "100%",
-                width: '91%',
-                minWidth: "90px",
+                width: 'calc(100% - 230px)',
                 fontSize: '19px',
                 border: "2px solid var(--theme-border-color)",
                 borderRadius: "8px",
                 backgroundColor: "transparent"
             }}>
+                {/* Header */}
                 <Div style={{
                     display: 'flex',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    position: 'relative',
+                    border: "2px solid var(--theme-border-color)",
+                    borderRadius: "8px",
+                    margin: '3px',
+                    width: 'calc(100% - 6px)',
+                    height: '36px',
+                    fontSize: '24px',}}>
+                    <HeaderOption 
+                        style={{backgroundColor: viewMode=='market_quotation'?'var(--theme-border-color)':'transparent'}}
+                        onClick={() => {setViewMode('market_quotation');}}>
+                        {t('market_quotation')}
+                    </HeaderOption>
+                    <HeaderOption 
+                        style={{backgroundColor: viewMode=='contract_info'?'var(--theme-border-color)':'transparent'}}
+                        onClick={() => {setViewMode('contract_info');}}>
+                        {t('contract_info')}
+                    </HeaderOption>
+                </Div>
+                {/* Display Area */}
+                {viewMode === 'contract_info' && <Div style={{
+                    display: 'flex',
                     flexDirection: 'column',
-                    width: '8.7rem',
+                    width: 'fit-content',
                     fontSize: '0.85rem',
                     border: "2px solid var(--theme-border-color)",
                     borderRadius: "8px",
                     margin: '3px'}}>
                     {infoContent}
-                </Div>
-                {data? <Div style={{
+                </Div>}
+                {viewMode === 'market_quotation' && (data? <Div style={{
                     position: 'relative',
                     height: '70%',
                     width: '60%'
@@ -241,7 +300,7 @@ function FuturesContent({ exchange }: FuturesContentProps) {
                         }, {
                             type: 'BarChart',
                         }]}/>
-                </Div>: <Title1>{t('no_data')}</Title1>}
+                </Div>: <Title1>{t('no_data')}</Title1>)}
             </div>
         </div>
     );
@@ -249,54 +308,41 @@ function FuturesContent({ exchange }: FuturesContentProps) {
 
 export default function ViewArea(props: ViewAreaProps) {
     const { t } = useTranslation('explore');
-    let title: string = '';
     let content = null;
     switch (props.$content) {
     case 'futures-overview':
-        title = t('list.futures');
         content = <Div>
             <Title2>{t('intro.futures')}</Title2>
         </Div>;
         break;
     case 'stocks-overview':
-        title = t('list.stocks');
         break;
     case 'futures-DCE':
-        title = t('list.DCE');
         content = <FuturesContent exchange="DCE" />;
         break;
     case 'futures-CZCE':
-        title = t('list.CZCE');
         content = <FuturesContent exchange="CZCE" />;
         break;
     case 'futures-SHFE':
-        title = t('list.SHFE');
         content = <FuturesContent exchange="SHFE" />;
         break;
     case 'futures-GFEX':
-        title = t('list.GFEX');
         content = <FuturesContent exchange="GFEX" />;
         break;
     case 'futures-CFFEX':
-        title = t('list.CFFEX');
         content = <FuturesContent exchange="CFFEX" />;
         break;
     case 'futures-INE':
-        title = t('list.INE');
         content = <FuturesContent exchange="INE" />;
         break;
     case 'stocks-CN':
-        title = t('list.CN');
         break;
     case 'stocks-HK':
-        title = t('list.HK');
         break;
     case 'stocks-US':
-        title = t('list.US');
         break;
     default:
     case 'overview':
-        title = t('list.overview');
         content = (
             <div style={{
                 position: "absolute",
@@ -320,8 +366,6 @@ export default function ViewArea(props: ViewAreaProps) {
         display: "flex",
         flexDirection: "column",
     }}> 
-        <TimeDisplay $title={title}/>
-        <HorizontalLine $width="5px" $length="99%" $align="center"/>
         { content } 
     </div>;
 }

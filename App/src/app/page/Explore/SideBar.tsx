@@ -7,7 +7,7 @@ const SideBarContainer = styled.div<{$darkMode: boolean}>`
     top: 0;
     left: 0;
     height: 100%;
-    width: 10rem;
+    width: 125px;
     background-color: ${props => props.$darkMode ? '#4b5155' : '#c6cdd2'};
     transition: background-color 300ms ease-in-out;
     align-items: flex-start;

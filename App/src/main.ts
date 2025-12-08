@@ -1,7 +1,9 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, ipcMain } from 'electron';
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+
+import type { WindowControlAction, WindowFrameState } from './types/window-controls';
 
 const isDevelopment = process.env.NODE_ENV === 'development';
 
@@ -19,6 +21,9 @@ const sanitizeUrl = (value?: string | null): string | undefined => {
 const appUrlFromEnv = sanitizeUrl(process.env.NEXT_APP_URL);
 const staticIndexPath = path.join(__dirname, '..', 'out', 'index.html');
 const iconFilenames = ['QuantDirect.ico', 'QuantDirect.png'];
+
+const WINDOW_CONTROL_CHANNEL = 'window-control';
+const WINDOW_STATE_CHANNEL = 'window-state-change';
 
 let mainWindow: BrowserWindow | null = null;
 const gotTheLock = app.requestSingleInstanceLock();
@@ -60,6 +65,33 @@ const loadTarget = (): string => {
   return 'about:blank';
 };
 
+const getWindowFrameState = (window: BrowserWindow): WindowFrameState => {
+  if (window.isDestroyed()) {
+    return 'restored';
+  }
+
+  if (window.isFullScreen()) {
+    return 'fullscreen';
+  }
+
+  if (window.isMaximized()) {
+    return 'maximized';
+  }
+
+  return 'restored';
+};
+
+const sendWindowState = (window: BrowserWindow) => {
+  if (window.isDestroyed()) {
+    return;
+  }
+
+  const { webContents } = window;
+  if (!webContents.isDestroyed()) {
+    webContents.send(WINDOW_STATE_CHANNEL, getWindowFrameState(window));
+  }
+};
+
 const createMainWindow = (): BrowserWindow => {
   const window = new BrowserWindow({
     width: 1366,
@@ -78,8 +110,20 @@ const createMainWindow = (): BrowserWindow => {
     }
   });
 
+  const emitWindowState = () => {
+    sendWindowState(window);
+  };
+
+  window.on('maximize', emitWindowState);
+  window.on('unmaximize', emitWindowState);
+  window.on('enter-full-screen', emitWindowState);
+  window.on('leave-full-screen', emitWindowState);
+  window.on('minimize', emitWindowState);
+  window.on('restore', emitWindowState);
+
   window.once('ready-to-show', () => {
     window.show();
+    emitWindowState();
   });
 
   const target = loadTarget();
@@ -100,6 +144,38 @@ const createMainWindow = (): BrowserWindow => {
 
   return window;
 };
+
+ipcMain.handle(WINDOW_CONTROL_CHANNEL, (event, action: WindowControlAction) => {
+  const targetWindow = BrowserWindow.fromWebContents(event.sender);
+
+  if (!targetWindow) {
+    return undefined;
+  }
+
+  switch (action) {
+    case 'minimize':
+      targetWindow.minimize();
+      sendWindowState(targetWindow);
+      return undefined;
+    case 'toggle-maximize':
+      if (targetWindow.isFullScreen()) {
+        targetWindow.setFullScreen(false);
+      } else if (targetWindow.isMaximized()) {
+        targetWindow.unmaximize();
+      } else {
+        targetWindow.maximize();
+      }
+      sendWindowState(targetWindow);
+      return getWindowFrameState(targetWindow);
+    case 'close':
+      targetWindow.close();
+      return undefined;
+    case 'get-state':
+      return getWindowFrameState(targetWindow);
+    default:
+      return undefined;
+  }
+});
 
 if (!gotTheLock) {
   app.quit();

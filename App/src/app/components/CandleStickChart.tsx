@@ -178,7 +178,7 @@ export const CandleStickChart = memo(function ContentImpl({ param }: {param: Can
         const dataRange = p.data.high - p.data.low;
         const unitY = (dataRange > 0? svgH / dataRange: 0);
         const width = svgW / displayCount;
-        const bodyWidth = displayCount >= 70 ? width * 0.2 : width * 0.65;
+        const bodyWidth = displayCount >= 70 ? width * 0.2 : width * 0.5;
         const sample = (displayCount <= 5? 1: Math.round(displayCount/10));
         const labelY = svgH + offset.bottom * 0.2 + 20 + p.fontSize;
 

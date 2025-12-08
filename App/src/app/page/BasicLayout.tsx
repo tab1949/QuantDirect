@@ -1,22 +1,57 @@
 'use client';
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next"; 
-import SettingsIcon from "./SVGIcons";
+import Image from "next/image";
 import ExplorePage from "./Explore/ExplorerPage";
 import HomePage from "./Home/Page";
 import { langName, supportedLang, languages } from "../locales/client-i18n";
 import {
-  Page, 
-  CommonHeader, 
-  HeaderElement, 
-  HeaderSeparator, 
-  SettingsMenuL1, 
-  SettingsOption, 
-  CommonBody, 
+  Page,
+  CommonHeader,
+  HeaderElement,
+  HeaderSeparator,
+  SettingsMenuL1,
+  SettingsOption,
+  CommonBody,
   CommonFooter,
-  SettingsMenuL2
+  SettingsMenuL2,
+  WindowControls,
+  WindowControlButton
 } from "../components/BasicLayout";
+import type { WindowFrameState } from "../../types/window-controls";
+
+function FooterClock() {
+  const [currentTime, setCurrentTime] = useState('');
+  const [currentDate, setCurrentDate] = useState('');
+  const refreshRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+      refreshRef.current = setInterval(() => {
+          const now = new Date();
+          now.setUTCHours(now.getUTCHours() + 8);
+          setCurrentTime(now.toISOString().slice(11, 19));
+          setCurrentDate(now.toISOString().slice(0, 10));
+      }, 1000);
+
+      return () => {
+          if (refreshRef.current) {
+              clearInterval(refreshRef.current);
+              refreshRef.current = null;
+          }
+      };
+  }, []);
+
+  return <div 
+      style={{
+          display: 'flex', 
+          alignItems: 'center',
+          marginLeft: 'auto',
+          marginRight: '10px'
+      }}>
+        {'(UTC+8) '}{` ${currentDate} ${currentTime} `}
+  </div>;
+}
 
 export default function BasicLayout() {
   const { t, i18n } = useTranslation();
@@ -27,6 +62,8 @@ export default function BasicLayout() {
   const [selected, setSelected] = useState({
     home: true, explore: false, research: false, community: false, help: false, dashboard: false, settings: false
   });
+  const [hasWindowControls, setHasWindowControls] = useState(false);
+  const [isMaximized, setIsMaximized] = useState(false);
 
   type Selected = typeof selected;
 
@@ -76,6 +113,45 @@ export default function BasicLayout() {
   const toggleDarkMode = useCallback(() => {
     setDarkMode(prev => !prev);
   }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.electronAPI) {
+      setHasWindowControls(false);
+      return;
+    }
+
+    setHasWindowControls(true);
+
+    const updateState = (state: WindowFrameState) => {
+      setIsMaximized(state === 'maximized' || state === 'fullscreen');
+    };
+
+    const unsubscribe = window.electronAPI.onWindowStateChange?.(updateState);
+
+    window.electronAPI.getWindowState?.()
+      .then((state) => {
+        if (state) {
+          updateState(state);
+        }
+      })
+      .catch(() => undefined);
+
+    return () => {
+      unsubscribe?.();
+    };
+  }, []);
+
+  const handleMinimize = useCallback(() => {
+    window.electronAPI?.minimize();
+  }, []);
+
+  const handleToggleMaximize = useCallback(() => {
+    window.electronAPI?.toggleMaximize();
+  }, []);
+
+  const handleClose = useCallback(() => {
+    window.electronAPI?.close();
+  }, []);
   
   const SettingsMenuL1Content = (
     <SettingsMenuL1 $darkMode={darkMode}>
@@ -113,10 +189,16 @@ export default function BasicLayout() {
         <CommonHeader $darkMode={darkMode}>
           <HeaderElement $selected={selected.home} onClick={openHome} 
             style={{
-              fontSize: '23px',
               marginLeft: '10px',
-              border: 'none'}}>
-            QuantDirect
+              borderBottom: '0px'
+            }}>
+            <Image
+              src="/resource/"
+              alt="QuantDirect"
+              width={25}
+              height={25}
+              style={{ display: 'block' }}
+            />
           </HeaderElement>
 
           <HeaderSeparator/>
@@ -137,16 +219,60 @@ export default function BasicLayout() {
             {t('basic.help')}
           </HeaderElement> 
 
-          <div style={{marginLeft: 'auto', display: 'flex', alignItems: 'center'}}>
-            <HeaderElement $selected={selected.dashboard} onClick={() => switchPage('dashboard')} style={{fontSize: '17px'}}>
-              {t('basic.dashboard')}
-            </HeaderElement>
+          <HeaderElement $selected={selected.settings} onClick={openSettingsMenu} 
+            itemID="header_settings">
+              {t('basic.settings')}
+          </HeaderElement>
 
-            <HeaderElement $selected={selected.settings} onClick={openSettingsMenu} 
-              itemID="header_settings">
-              <SettingsIcon $color="var(--theme-icon-color)" $w={'30px'} $h={'30px'}></SettingsIcon>
-            </HeaderElement>
-          </div>
+          <HeaderSeparator/>
+
+          {hasWindowControls && (
+            <WindowControls>
+              <WindowControlButton
+                type="button"
+                aria-label="Minimize window"
+                title="Minimize"
+                $darkMode={darkMode}
+                onClick={handleMinimize}
+              >
+                <svg viewBox="0 0 12 12">
+                  <path d="M2 6h8" strokeWidth="1.4" />
+                </svg>
+              </WindowControlButton>
+              <WindowControlButton
+                type="button"
+                aria-label={isMaximized ? "Restore window" : "Maximize window"}
+                title={isMaximized ? "Restore" : "Maximize"}
+                $darkMode={darkMode}
+                onClick={handleToggleMaximize}
+              >
+                {isMaximized ? (
+                  <svg viewBox="0 0 12 12">
+                    <path d="M4 3h5v5" />
+                    <rect x="3" y="4" width="5" height="5" rx="1" />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 12 12">
+                    <rect x="2.5" y="2.5" width="7" height="7" rx="1" />
+                  </svg>
+                )}
+              </WindowControlButton>
+              <WindowControlButton
+                type="button"
+                aria-label="Close window"
+                title="Close"
+                $darkMode={darkMode}
+                $variant="close"
+                onClick={handleClose}
+              >
+                <svg viewBox="0 0 12 12">
+                  <path d="M3 3l6 6" />
+                  <path d="M9 3L3 9" />
+                </svg>
+              </WindowControlButton>
+            </WindowControls>
+          )}
+
         </CommonHeader>
 
         <CommonBody $darkMode={darkMode} 
@@ -162,7 +288,8 @@ export default function BasicLayout() {
         {settingsL2Opened && SettingsMenuL2Content}
 
         <CommonFooter $darkMode={darkMode}>
-          {t('basic.intro')}
+          {/* {t('basic.intro')} */}
+          <FooterClock/>
         </CommonFooter>
       </Page> 
   );

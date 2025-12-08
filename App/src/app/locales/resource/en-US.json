@@ -1,5 +1,6 @@
 {
     "basic": {
+        "settings": "Settings",
         "explore": "Explore",
         "research": "Research",
         "community": "Community",
@@ -85,6 +86,8 @@
             "1month": "1 month",
             "1quarter": "1 quarter",
             "1year": "1 year"
-        }
+        },
+        "market_quotation": "Market Quotation",
+        "contract_info": "Contract Information"
     }
 }

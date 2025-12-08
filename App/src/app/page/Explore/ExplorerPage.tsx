@@ -50,6 +50,9 @@ export default function ExplorePage(props: ExplorePageProps) {
     const stocksUS = useCallback(() => {
         setViewContent('stocks-US');
     }, []);
+    const toggleLeftBorder = useCallback((option: string): string => {
+        return viewContent === option ? '5px solid var(--theme-font-color)' : 'none';
+    }, [viewContent]);
     return (
         <div style={{
             position: 'relative',
@@ -65,18 +68,18 @@ export default function ExplorePage(props: ExplorePageProps) {
             <SideBarOptionsL1 onClick={overviewOptionClicked}>{t('list.overview')}{' →'}</SideBarOptionsL1>
             <SideBarOptionsL1 onClick={futuresOptionClicked}>{t('list.futures')}{futuresListOpened? ' ↓': ' →'}</SideBarOptionsL1>
             {futuresListOpened && <div>
-                <SideBarOptionsL2 onClick={futuresCZCE}>{t('list.CZCE')}</SideBarOptionsL2>
-                <SideBarOptionsL2 onClick={futuresDCE}>{t('list.DCE')}</SideBarOptionsL2>
-                <SideBarOptionsL2 onClick={futuresSHFE}>{t('list.SHFE')}</SideBarOptionsL2>
-                <SideBarOptionsL2 onClick={futuresGFEX}>{t('list.GFEX')}</SideBarOptionsL2>
-                <SideBarOptionsL2 onClick={futuresCFFEX}>{t('list.CFFEX')}</SideBarOptionsL2>
-                <SideBarOptionsL2 onClick={futuresINE}>{t('list.INE')}</SideBarOptionsL2>
+                <SideBarOptionsL2 onClick={futuresCZCE} style={{borderLeft: toggleLeftBorder('futures-CZCE')}}>{t('list.CZCE')}</SideBarOptionsL2>
+                <SideBarOptionsL2 onClick={futuresDCE} style={{borderLeft: toggleLeftBorder('futures-DCE')}}>{t('list.DCE')}</SideBarOptionsL2>
+                <SideBarOptionsL2 onClick={futuresSHFE} style={{borderLeft: toggleLeftBorder('futures-SHFE')}}>{t('list.SHFE')}</SideBarOptionsL2>
+                <SideBarOptionsL2 onClick={futuresGFEX} style={{borderLeft: toggleLeftBorder('futures-GFEX')}}>{t('list.GFEX')}</SideBarOptionsL2>
+                <SideBarOptionsL2 onClick={futuresCFFEX} style={{borderLeft: toggleLeftBorder('futures-CFFEX')}}>{t('list.CFFEX')}</SideBarOptionsL2>
+                <SideBarOptionsL2 onClick={futuresINE} style={{borderLeft: toggleLeftBorder('futures-INE')}}>{t('list.INE')}</SideBarOptionsL2>
             </div>}
             <SideBarOptionsL1 onClick={stocksOptionClicked}>{t('list.stocks')}{stocksListOpened? ' ↓': ' →'}</SideBarOptionsL1>
             {stocksListOpened && <div>
-                <SideBarOptionsL2 onClick={stocksCN}>{t('list.CN')}</SideBarOptionsL2>
-                <SideBarOptionsL2 onClick={stocksHK}>{t('list.HK')}</SideBarOptionsL2>
-                <SideBarOptionsL2 onClick={stocksUS}>{t('list.US')}</SideBarOptionsL2>
+                <SideBarOptionsL2 onClick={stocksCN} style={{borderLeft: toggleLeftBorder('stocks-CN')}}>{t('list.CN')}</SideBarOptionsL2>
+                <SideBarOptionsL2 onClick={stocksHK} style={{borderLeft: toggleLeftBorder('stocks-HK')}}>{t('list.HK')}</SideBarOptionsL2>
+                <SideBarOptionsL2 onClick={stocksUS} style={{borderLeft: toggleLeftBorder('stocks-US')}}>{t('list.US')}</SideBarOptionsL2>
             </div>}
         </SideBar>
         <ViewArea $content={viewContent}/>
