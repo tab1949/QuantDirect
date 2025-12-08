@@ -18,6 +18,11 @@ const nextScript = path.join(rootDir, 'node_modules', 'next', 'dist', 'bin', 'ne
 const electronEntry = path.join(rootDir, 'dist-electron', 'main.js');
 const electronArgs = [electronEntry];
 
+const stripAnsi = (value) =>
+  typeof value === 'string'
+    ? value.replace(/[\u001B\u009B][[\]()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, '')
+    : value;
+
 // Ensure the Electron main process code is up to date before launching.
 const compileElectron = () => {
   const result = spawnSync(process.execPath, [tscScript, '-p', 'tsconfig.electron.json'], {
@@ -31,7 +36,7 @@ const compileElectron = () => {
 
 let electronProcess = null;
 let electronStarted = false;
-let pendingUrl = `http://localhost:${port}`;
+let pendingUrl = `http://127.0.0.1:${port}`;
 
 compileElectron();
 
@@ -52,6 +57,7 @@ const launchElectron = () => {
   }
   electronStarted = true;
   console.log('Launching Electron:', electronBinary, electronArgs.join(' '));
+  console.log('  ↳ Target URL:', pendingUrl);
   try {
     // Spawn the Electron shell pointing at the freshly compiled entry file.
     electronProcess = spawn(electronBinary, electronArgs, {
@@ -97,7 +103,10 @@ devServer.stdout.on('data', (data) => {
   // Capture the dev server URL so Electron knows where to load the app from.
   const match = text.match(/https?:\/\/[^\s]+:\d+/);
   if (match) {
-    pendingUrl = match[0];
+    const candidate = stripAnsi(match[0]);
+    if (candidate) {
+      pendingUrl = candidate;
+    }
   }
   // Launch Electron once Next.js signals readiness.
   if (!electronStarted && /ready/i.test(text)) {

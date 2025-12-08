@@ -39,11 +39,12 @@
     "productName": "QuantDirect",
     "directories": {
       "output": "release",
-      "buildResources": "build"
+      "buildResources": "resource"
     },
     "files": [
       "dist-electron/**/*",
       "out/**/*",
+      "resource/**/*",
       "package.json"
     ],
     "extraMetadata": {
@@ -51,6 +52,7 @@
     },
     "asar": true,
     "win": {
+      "icon": "QuantDirect.ico",
       "target": [
         {
           "target": "nsis",
@@ -69,6 +71,7 @@
       "publisherName": "tabxx"
     },
     "linux": {
+      "icon": "QuantDirect.png",
       "target": [
         {
           "target": "AppImage",
