@@ -3,11 +3,7 @@ import { useTranslation } from "react-i18next";
 import { SideBar, SideBarOptionsL1, SideBarOptionsL2 } from "./SideBar";
 import ViewArea from "./ViewArea";
 
-interface ExplorePageProps {
-    $darkMode: boolean;
-}
-
-export default function ExplorePage(props: ExplorePageProps) {
+export default function ExplorePage() {
     const { t } = useTranslation('explore');
     const [futuresListOpened, setFuturesListOpened] = useState(false);
     const [stocksListOpened, setStocksListOpened] = useState(false);
@@ -64,7 +60,7 @@ export default function ExplorePage(props: ExplorePageProps) {
             transition: 'opacity 200ms ease-in',
             opacity: '1'
         }}>
-        <SideBar $darkMode={props.$darkMode}>
+        <SideBar>
             <SideBarOptionsL1 onClick={overviewOptionClicked}>{t('list.overview')}{' →'}</SideBarOptionsL1>
             <SideBarOptionsL1 onClick={futuresOptionClicked}>{t('list.futures')}{futuresListOpened? ' ↓': ' →'}</SideBarOptionsL1>
             {futuresListOpened && <div>

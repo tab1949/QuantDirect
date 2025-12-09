@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo, ReactElement } from "react";
 import { useTranslation } from "react-i18next"; 
 import Image from "next/image";
-import ExplorePage from "./Explore/ExplorerPage";
+import ExplorePage from "./Explore/Page";
 import HomePage from "./Home/Page";
+import SettingsPage from "./Settings/Page";
 import { langName, supportedLang, languages } from "../locales/client-i18n";
 import {
   Page,
@@ -54,48 +55,27 @@ function FooterClock() {
 }
 
 export default function BasicLayout() {
+  type Page = 'home' | 'explore' | 'research' | 'trading' | 'community' | 'help' | 'dashboard' | 'settings';
   const { t, i18n } = useTranslation();
   const [darkMode, setDarkMode] = useState(true);
   const [settingsL1Opened, setSettingsL1Opened] = useState(false);
   const [settingsL2Opened, setSettingsL2Opened] = useState(false);
+  const [settingsPageOpened, setSettingsPageOpened] = useState(false);
   const [settingsL2Type, setSettingsL2Type] = useState('');
-  const [selected, setSelected] = useState({
-    home: true, explore: false, research: false, community: false, help: false, dashboard: false, settings: false
-  });
+  const [selected, setSelected] = useState<Page>('home');
   const [hasWindowControls, setHasWindowControls] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
   const [displayScaleInfo, setDisplayScaleInfo] = useState<string | null>(null);
 
-  type Selected = typeof selected;
 
   const displayScaleInfoTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const switchPage = useCallback((nav: keyof Selected) => {
-    setSelected(prev => ({ 
-      ...prev, 
-      home: false,
-      help: nav === 'help',
-      community: nav === 'community',
-      research: nav === 'research',
-      explore: nav === 'explore',
-      dashboard: nav === 'dashboard'
-    }));
-  }, []);
-
   const openHome = useCallback(() => {
-    setSelected(prev => ({ 
-      ...prev, 
-      home: true,
-      explore: false,
-      research: false,
-      community: false,
-      dashboard: false,
-      help: false
-    }));
+    setSelected('home');
   }, []);
 
   const openSettingsMenu = useCallback(() => {
-    setSelected(prev => ({ ...prev, settings: !prev.settings }));
+
     if (settingsL1Opened) {
       setSettingsL1Opened(false); 
       setSettingsL2Opened(false);
@@ -106,6 +86,11 @@ export default function BasicLayout() {
 
   const openLanguageMenu = useCallback(() => {
     setSettingsL2Type("lang");
+    setSettingsL2Opened(s => !s);
+  }, []);
+
+  const openTradingSettingsMenu = useCallback(() => {
+    setSettingsL2Type("trading");
     setSettingsL2Opened(s => !s);
   }, []);
 
@@ -191,25 +176,32 @@ export default function BasicLayout() {
         <span>({i18n.language === 'en-US' ? langName[languages.EN_US] : 
                 i18n.language === 'zh-CN' ? langName[languages.ZH_CN] : langName[languages.ZH_HK]})</span>
       </SettingsOption>
+      <SettingsOption $darkMode={darkMode} onClick={openTradingSettingsMenu}>
+        {`${t('basic.trading')} ...`}
+      </SettingsOption>
     </SettingsMenuL1>
-  ), [darkMode, i18n.language, toggleDarkMode, openLanguageMenu, t]);
+  ), [darkMode, i18n.language, toggleDarkMode, openLanguageMenu, openTradingSettingsMenu, t]);
 
-  const SettingsMenuL2Content = useMemo(() => settingsL2Type === 'lang' && (
-    <SettingsMenuL2 $darkMode={darkMode}>
-      {supportedLang.map((v, i) => (
-        <SettingsOption 
-          key={`lang-opt-${i}`} 
-          $darkMode={darkMode} 
-          onClick={() => { 
-            changeLanguage(v); 
-            setSettingsL2Opened(false); 
-          }}
-        >
-          {langName[i]}
-        </SettingsOption>
-      ))}
-    </SettingsMenuL2>
-  ), [darkMode, settingsL2Type, changeLanguage]);
+  const SettingsMenuL2Content = useMemo(() => {
+    switch (settingsL2Type) {
+      case 'lang':
+        return <SettingsMenuL2 $darkMode={darkMode}>
+          {supportedLang.map((v, i) => {
+          return <SettingsOption
+            key={`lang-opt-${i}`}
+            $darkMode={darkMode}
+            onClick={() => { 
+              changeLanguage(v); 
+              setSettingsL2Opened(false); 
+            }}>
+            {langName[i]}
+          </SettingsOption>;
+          })}
+        </SettingsMenuL2>;
+      case 'trading': 
+        setSettingsPageOpened(true);
+    }
+  }, [settingsL2Type, darkMode, changeLanguage]);
 
   const ScaleInfoRect = useMemo(() => displayScaleInfo ? (
     <div
@@ -234,10 +226,37 @@ export default function BasicLayout() {
     </div>
   ) : null, [displayScaleInfo, t]);
 
+  const page = useMemo(() => {
+    let content: ReactElement | null = null;
+    setSettingsPageOpened(false);
+    switch (selected) {
+      case 'home':
+        content = <HomePage />;
+        break;
+      case 'explore':
+        content = <ExplorePage />;
+        break;
+      case 'research':
+      case 'trading':
+      case 'community':
+      case 'help':
+      case 'dashboard':
+      default:
+        content = null;
+    }
+    return <CommonBody $darkMode={darkMode} 
+      onClick={()=>{
+        setSettingsL1Opened(false); 
+        setSettingsL2Opened(false);
+      }}>
+      {content}
+    </CommonBody>
+  }, [darkMode, selected]);
+
   return (
     <Page $darkMode={darkMode}>
         <CommonHeader $darkMode={darkMode}>
-          <HeaderElement $selected={selected.home} onClick={openHome} 
+          <HeaderElement $selected={selected === 'home'} onClick={openHome} 
             style={{
               marginLeft: '10px',
               borderBottom: '0px'
@@ -253,23 +272,27 @@ export default function BasicLayout() {
 
           <HeaderSeparator/>
 
-          <HeaderElement $selected={selected.explore} onClick={() => switchPage('explore')}>
+          <HeaderElement $selected={selected === 'explore'} onClick={() => setSelected('explore')}>
             {t('basic.explore')}
           </HeaderElement>
 
-          <HeaderElement $selected={selected.research} onClick={() => switchPage('research')}>
+          <HeaderElement $selected={selected === 'research'} onClick={() => setSelected('research')}>
             {t('basic.research')}
           </HeaderElement>
 
-          <HeaderElement $selected={selected.community} onClick={() => switchPage('community')}>
+          <HeaderElement $selected={selected === 'trading'} onClick={() => setSelected('trading')}>
+            {t('basic.trading')}
+          </HeaderElement>
+
+          <HeaderElement $selected={selected === 'community'} onClick={() => setSelected('community')}>
             {t('basic.community')}
           </HeaderElement>
 
-          <HeaderElement $selected={selected.help} onClick={() => switchPage('help')}>
+          <HeaderElement $selected={selected === 'help'} onClick={() => setSelected('help')}>
             {t('basic.help')}
           </HeaderElement> 
 
-          <HeaderElement $selected={selected.settings} onClick={openSettingsMenu} 
+          <HeaderElement $selected={selected === 'settings'} onClick={openSettingsMenu} 
             itemID="header_settings">
               {t('basic.settings')}
           </HeaderElement>
@@ -325,16 +348,7 @@ export default function BasicLayout() {
           )}
 
         </CommonHeader>
-
-        <CommonBody $darkMode={darkMode} 
-          onClick={()=>{
-            setSettingsL1Opened(false); 
-            setSettingsL2Opened(false);
-            setSelected(prev => ({ ...prev, settings: false }));}}>
-          {selected.home && <HomePage/>}
-          {selected.explore && <ExplorePage $darkMode={darkMode}/>}
-        </CommonBody>
-        
+        {settingsPageOpened? <SettingsPage/>: page}
         {settingsL1Opened && SettingsMenuL1Content}
         {settingsL2Opened && SettingsMenuL2Content}
         {ScaleInfoRect}

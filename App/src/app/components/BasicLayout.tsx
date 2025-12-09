@@ -3,9 +3,9 @@ import * as Animation from "../page/Animation";
 
 export const Page = styled.div<{ $darkMode: boolean}>`
   background-color: var(--theme-background-color);
-  display: grid;
-  grid-row: 3;
-  grid-column: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
   left: 0;
   top: 0;
   height: 100vh;
@@ -27,6 +27,7 @@ export const Page = styled.div<{ $darkMode: boolean}>`
   --theme-accent-color: ${props => props.$darkMode? '#5a6470' : '#9ca3af'};
   --theme-border-color: ${props => props.$darkMode? '#3a4149' : '#d1d5db'};
   --theme-separator-color: ${props => props.$darkMode ? 'rgba(184, 194, 208, 0.3)' : 'rgba(107, 114, 128, 0.4)'};
+  --theme-sidebar-bg-color: ${props => props.$darkMode ? '#4b5155' : '#c6cdd2'};
 `;
 
 export const CommonHeader = styled.div<{ $darkMode: boolean}>`
@@ -165,7 +166,7 @@ export const SettingsMenuL1 = styled.div<{ $darkMode: boolean}>`
     '0 10px 25px rgba(255, 255, 255, 0.1)' : 
     '0 10px 25px rgba(0, 0, 0, 0.1)'};
   position: fixed;
-  --width: calc(5vw + 120px);
+  --width: 160px;
   width: var(--width);
   height: auto;
   top: calc(var(--header-height) + 2px);
@@ -196,7 +197,7 @@ export const SettingsOption = styled.div<{ $darkMode: boolean}>`
   align-items: center;
   height: max-content;
   position: relative;
-  font-size: 15px;
+  font-size: 14px;
   width: 98%;
   margin: 2px;
   padding: 5px 10px;
