@@ -10,4 +10,5 @@ export interface WindowControlsAPI {
   close: () => Promise<void>;
   getWindowState: () => Promise<WindowFrameState | undefined>;
   onWindowStateChange: (callback: (state: WindowFrameState) => void) => WindowControlsTeardown;
+  onWindowScaleChange: (callback: (scale: number) => void) => WindowControlsTeardown;
 }

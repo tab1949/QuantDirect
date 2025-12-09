@@ -257,9 +257,8 @@ function FuturesContent({ exchange }: FuturesContentProps) {
                     flexDirection: 'row',
                     alignItems: 'center',
                     position: 'relative',
-                    border: "2px solid var(--theme-border-color)",
-                    borderRadius: "8px",
-                    margin: '3px',
+                    border: "0px",
+                    marginTop: '5px',
                     width: 'calc(100% - 6px)',
                     height: '36px',
                     fontSize: '24px',}}>

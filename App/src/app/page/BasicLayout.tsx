@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next"; 
 import Image from "next/image";
 import ExplorePage from "./Explore/ExplorerPage";
@@ -64,8 +64,11 @@ export default function BasicLayout() {
   });
   const [hasWindowControls, setHasWindowControls] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
+  const [displayScaleInfo, setDisplayScaleInfo] = useState<string | null>(null);
 
   type Selected = typeof selected;
+
+  const displayScaleInfoTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const switchPage = useCallback((nav: keyof Selected) => {
     setSelected(prev => ({ 
@@ -106,9 +109,9 @@ export default function BasicLayout() {
     setSettingsL2Opened(s => !s);
   }, []);
 
-  const changeLanguage = (lang: string) => {
+  const changeLanguage = useMemo(() => (lang: string) => {
     i18n.changeLanguage(lang);
-  };
+  }, [i18n]);
   
   const toggleDarkMode = useCallback(() => {
     setDarkMode(prev => !prev);
@@ -141,6 +144,30 @@ export default function BasicLayout() {
     };
   }, []);
 
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.electronAPI?.onWindowScaleChange) {
+      return undefined;
+    }
+
+    const unsubscribe = window.electronAPI.onWindowScaleChange((scale) => {
+      setDisplayScaleInfo(`${(scale * 100).toFixed(0)}%`);
+      if (displayScaleInfoTimeoutRef.current) {
+        clearTimeout(displayScaleInfoTimeoutRef.current);
+      }
+      displayScaleInfoTimeoutRef.current = setTimeout(() => {
+        setDisplayScaleInfo(null);
+      }, 2000);
+    });
+
+    return () => {
+      if (displayScaleInfoTimeoutRef.current) {
+        clearTimeout(displayScaleInfoTimeoutRef.current);
+        displayScaleInfoTimeoutRef.current = null;
+      }
+      unsubscribe?.();
+    };
+  }, []);
+
   const handleMinimize = useCallback(() => {
     window.electronAPI?.minimize();
   }, []);
@@ -153,7 +180,7 @@ export default function BasicLayout() {
     window.electronAPI?.close();
   }, []);
   
-  const SettingsMenuL1Content = (
+  const SettingsMenuL1Content = useMemo(() => (
     <SettingsMenuL1 $darkMode={darkMode}>
       <SettingsOption $darkMode={darkMode} onClick={toggleDarkMode}>
         <span>{t('basic.theme')}</span>
@@ -165,9 +192,9 @@ export default function BasicLayout() {
                 i18n.language === 'zh-CN' ? langName[languages.ZH_CN] : langName[languages.ZH_HK]})</span>
       </SettingsOption>
     </SettingsMenuL1>
-  );
+  ), [darkMode, i18n.language, toggleDarkMode, openLanguageMenu, t]);
 
-  const SettingsMenuL2Content = settingsL2Type === 'lang' && (
+  const SettingsMenuL2Content = useMemo(() => settingsL2Type === 'lang' && (
     <SettingsMenuL2 $darkMode={darkMode}>
       {supportedLang.map((v, i) => (
         <SettingsOption 
@@ -182,7 +209,30 @@ export default function BasicLayout() {
         </SettingsOption>
       ))}
     </SettingsMenuL2>
-  );
+  ), [darkMode, settingsL2Type, changeLanguage]);
+
+  const ScaleInfoRect = useMemo(() => displayScaleInfo ? (
+    <div
+      style={{
+        position: 'fixed',
+        top: 'calc(var(--header-height) + 5px)',
+        right: '5px',
+        width: 'fit-content',
+        height: 'fit-content',
+        backgroundColor: 'var(--theme-border-color)',
+        color: 'var(--theme-font-color)',
+        borderRadius: '4px',
+        fontSize: '16px',
+        padding: '6px 12px',
+        zIndex: 1000,
+        pointerEvents: 'none',
+        userSelect: 'none',
+        transition: 'opacity 1s ease-in-out',
+      }}
+    >
+      {`${t('basic.scale')}: ${displayScaleInfo}`}
+    </div>
+  ) : null, [displayScaleInfo, t]);
 
   return (
     <Page $darkMode={darkMode}>
@@ -228,10 +278,11 @@ export default function BasicLayout() {
 
           {hasWindowControls && (
             <WindowControls>
+              <HeaderSeparator/>
               <WindowControlButton
                 type="button"
                 aria-label="Minimize window"
-                title="Minimize"
+                title={t('basic.minimize')}
                 $darkMode={darkMode}
                 onClick={handleMinimize}
               >
@@ -241,8 +292,8 @@ export default function BasicLayout() {
               </WindowControlButton>
               <WindowControlButton
                 type="button"
-                aria-label={isMaximized ? "Restore window" : "Maximize window"}
-                title={isMaximized ? "Restore" : "Maximize"}
+                aria-label={isMaximized ? t('basic.restore') + " window" : t('basic.maximize') }
+                title={isMaximized ? t('basic.restore') : t('basic.maximize')}
                 $darkMode={darkMode}
                 onClick={handleToggleMaximize}
               >
@@ -260,7 +311,7 @@ export default function BasicLayout() {
               <WindowControlButton
                 type="button"
                 aria-label="Close window"
-                title="Close"
+                title={t('basic.close')}
                 $darkMode={darkMode}
                 $variant="close"
                 onClick={handleClose}
@@ -286,7 +337,7 @@ export default function BasicLayout() {
         
         {settingsL1Opened && SettingsMenuL1Content}
         {settingsL2Opened && SettingsMenuL2Content}
-
+        {ScaleInfoRect}
         <CommonFooter $darkMode={darkMode}>
           {/* {t('basic.intro')} */}
           <FooterClock/>

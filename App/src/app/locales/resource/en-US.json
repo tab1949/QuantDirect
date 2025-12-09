@@ -1,5 +1,10 @@
 {
     "basic": {
+        "maximize": "Maximize",
+        "restore": "Restore",
+        "minimize": "Minimize",
+        "close": "Close",
+        "scale": "Scale",
         "settings": "Settings",
         "explore": "Explore",
         "research": "Research",

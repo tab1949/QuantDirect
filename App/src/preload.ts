@@ -4,6 +4,7 @@ import type { WindowControlsAPI, WindowFrameState } from './types/window-control
 
 const WINDOW_CONTROL_CHANNEL = 'window-control';
 const WINDOW_STATE_CHANNEL = 'window-state-change';
+const WINDOW_SCALE_CHANNEL = 'window-scale-change';
 
 const electronAPI: WindowControlsAPI = {
 	minimize: () => ipcRenderer.invoke(WINDOW_CONTROL_CHANNEL, 'minimize'),
@@ -18,6 +19,15 @@ const electronAPI: WindowControlsAPI = {
 		return () => {
 			ipcRenderer.removeListener(WINDOW_STATE_CHANNEL, subscription);
 		};
+	},
+	onWindowScaleChange: (callback: (scale: number) => void) => {
+		const subscription = (_event: unknown, scale: number) => {
+			callback(scale);
+		};
+		ipcRenderer.on(WINDOW_SCALE_CHANNEL, subscription);
+		return () => {
+			ipcRenderer.removeListener(WINDOW_SCALE_CHANNEL, subscription);
+		}
 	}
 };
 

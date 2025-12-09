@@ -64,6 +64,7 @@ export const HeaderElement = styled.div<{$selected: boolean}>`
   border-width: 0;
   border-bottom: ${props => props.$selected ? "3px solid var(--theme-accent-color)": ""};
   font-size: 16px;
+  font-weight: ${props => props.$selected ? "600": "520"};
   -webkit-app-region: no-drag;
   
 `;
@@ -71,7 +72,7 @@ export const HeaderElement = styled.div<{$selected: boolean}>`
 export function HeaderSeparator() {
   return <div style={{
     position: 'relative',
-    height: '90%',
+    height: '80%',
     width: '2px',
     backgroundColor: 'var(--theme-separator-color)',
     alignSelf: 'center',

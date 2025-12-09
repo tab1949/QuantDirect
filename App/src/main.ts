@@ -1,4 +1,5 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
+import type { Input } from 'electron';
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -22,8 +23,13 @@ const appUrlFromEnv = sanitizeUrl(process.env.NEXT_APP_URL);
 const staticIndexPath = path.join(__dirname, '..', 'out', 'index.html');
 const iconFilenames = ['QuantDirect.ico', 'QuantDirect.png'];
 
+const ZOOM_STEP = 0.1;
+const MIN_ZOOM = 0.5;
+const MAX_ZOOM = 3;
+
 const WINDOW_CONTROL_CHANNEL = 'window-control';
 const WINDOW_STATE_CHANNEL = 'window-state-change';
+const WINDOW_SCALE_CHANNEL = 'window-scale-change';
 
 let mainWindow: BrowserWindow | null = null;
 const gotTheLock = app.requestSingleInstanceLock();
@@ -92,12 +98,68 @@ const sendWindowState = (window: BrowserWindow) => {
   }
 };
 
+const sendWindowScale = (window: BrowserWindow) => {
+  if (window.isDestroyed()) {
+    return;
+  }
+
+  const { webContents } = window;
+  if (!webContents.isDestroyed()) {
+    webContents.send(WINDOW_SCALE_CHANNEL, webContents.getZoomFactor());
+  }
+}
+
+const setupWindowZoomControls = (window: BrowserWindow) => {
+  const { webContents } = window;
+  let zoomFactor = 1;
+
+  const clampZoom = (value: number) => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, value));
+  const applyZoom = (value: number) => {
+    const next = clampZoom(Number(value.toFixed(2)));
+    if (!webContents.isDestroyed()) {
+      webContents.setZoomFactor(next);
+      sendWindowScale(window);
+    }
+    zoomFactor = next;
+  };
+
+  const handleInput = (event: Electron.Event, input: Input) => {
+    if (!(input.control || input.meta)) {
+      return;
+    }
+
+    switch (input.key) {
+      case '+':
+      case '=':
+      case 'Add':
+        applyZoom(zoomFactor + ZOOM_STEP);
+        event.preventDefault();
+        break;
+      case '-':
+      case '_':
+      case 'Subtract':
+        applyZoom(zoomFactor - ZOOM_STEP);
+        event.preventDefault();
+        break;
+      default:
+        break;
+    }
+  };
+
+  webContents.on('before-input-event', handleInput);
+  window.on('closed', () => {
+    if (!webContents.isDestroyed()) {
+      webContents.removeListener('before-input-event', handleInput);
+    }
+  });
+};
+
 const createMainWindow = (): BrowserWindow => {
   const window = new BrowserWindow({
     width: 1366,
     height: 900,
-    minWidth: 1024,
-    minHeight: 720,
+    minWidth: 800,
+    minHeight: 600,
     show: false,
     frame: false,
     autoHideMenuBar: true,
@@ -125,6 +187,8 @@ const createMainWindow = (): BrowserWindow => {
     window.show();
     emitWindowState();
   });
+
+  setupWindowZoomControls(window);
 
   const target = loadTarget();
   if (isDevelopment) {
