@@ -1,2 +1,2 @@
 # QuantDirect
-A platform for quant researchers to analysis and communicate
+A research platform for quant researchers.
