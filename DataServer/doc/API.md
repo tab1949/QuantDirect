@@ -46,6 +46,53 @@ Response:
 
 ----------------------
 ### **Futures**
+**0. Trading Calender** 
+
+Name: `"calender"`;  
+
+Parameters:  
+| Name | Type | Required? | Description | Comment |
+|:----:|:----:|:---------:|:------------|:--------|
+|`"exchange"`|string|N|Exchange Code ("CFFEX","CZCE","DCE","GFEX","INE","SHFE")(in **upper case**)||
+|`"begin"`|string|N|Beginning Date|In 'YYYY-MM-DD'|
+|`"end"`|string|N|Ending Date|In 'YYYY-MM-DD'|
+
+Fields:  
+| Name | Type | Default? | Description | Comment |
+|:----:|:----:|:--------:|:------------|:--------|
+|`"exchange"`|string|Y|Exchange Code ("CFFEX","CZCE","DCE","GFEX","INE","SHFE")||
+|`"date"`|string|Y|Nature Day|In 'YYYY-MM-DD'|
+|`"open"`|bool|Y|Is Trading Day or Not||
+|`"last_open"`|string|Y|Last Trading Day|In 'YYYY-MM-DD'|
+
+**Example**  
+* Request: 
+  * URI: https://data.tabxx.net/api/futures
+  * Method: POST
+  * Body: 
+    ```json
+    {
+      "api": "calender",
+      "token": "xxx",
+      "param": {
+        "exchange": "DCE"
+      },
+      "want": []
+    }
+    ```
+  * Response:  
+    ```json
+    {
+      "ok": true,
+      "msg": "success",
+      "fields": ["exchange", "date", "open", "last_open"],
+      "count": 1,
+      "data": [
+        ["DCE"], ["2025-10-01"], [false], ["2025-09-30"]
+      ]
+    }
+    ```
+----------------
 **1. Contract Information**  
 
 Name: `"info"`;  
@@ -71,7 +118,6 @@ Fields:
 |`"limit_band"`|number|Y|Maximum Rising/Falling Rate|Percentage|
 |`"last_trading_day"`|string|Y|The Last Trading Day|In 'YYYY-MM-DD'|
 |`"delivery_date"`|string|N|The Delivery Date|In 'YYYY-MM-DD'|
-|`"contract_months"`|number[]|N|Months of Delivery Dates||
 |`"listing_date"`|string|N|The Listing Date|In 'YYYY-MM-DD'|
 
 **Example**  
@@ -117,7 +163,7 @@ Fields:
 
 | Name | Type | Default? | Description | Comment |
 |:----:|:----:|:--------:|:------------|:--------|
-|`"trading_day"`|string|Y|Trading Day|In 'YYYY-MM-DD'|
+|`"date"`|string|Y|Date|In 'YYYY-MM-DD'|
 |`"time"`|string|Y|Update Time|In 'HH:mm:SS'|
 |`"ms"`|number|Y|Millisecond of Update Time||
 |`"last_price"`|number|Y|The Last Price||
@@ -151,10 +197,10 @@ Fields:
     {
       "ok": true,
       "msg": "success",
-      "fields": ["trading_day", "time", "ms", "last_price", "volume", "turnover", "open_interest", "average", "bid_price1", "bid_volume1", "ask_price1", "ask_volume1"],
+      "fields": ["date", "time", "ms", "last_price", "volume", "turnover", "open_interest", "average", "bid_price1", "bid_volume1", "ask_price1", "ask_volume1"],
       "count": 123456,
       "data": [
-        ["2025-10-31", "2025-10-31", ...], // trading_day
+        ["2025-10-31", "2025-10-31", ...], // date
         ["21:00:00", "21:00:00", ...], // time
         [0, 500, ...], // ms
         [11245, 11245, ...], // last_price

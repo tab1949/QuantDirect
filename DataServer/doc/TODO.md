@@ -32,6 +32,7 @@ Here listed unfinished tasks. For detailed interface description, see [API.md](.
 
 ### Futures Query:
 - [ ] Contract Information (**Single** / **Combination**)
+- [ ] Trading Calender (**Period**)
 - [ ] History Market Data (**Period**: 0.5s / 1s / 1min / 1h / 1d) (**Duration**)
 - [ ] History Broker Position (**Duration** / **Single Day**)
 - [ ] History Warehouse Data (**Duration** / **Single Day**)
@@ -45,3 +46,7 @@ Here listed unfinished tasks. For detailed interface description, see [API.md](.
 - [ ] Basic Information
 - [ ] History Market Data (**Period**: 1min / 1day) (**Duration**)
 - [ ] Financial Statement
+
+## 3. Database Building
+- [ ] Build Database System
+- [ ] Data Cleaning & Importing Tools
