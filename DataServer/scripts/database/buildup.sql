@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS TradingCalendar (
 ) 
 ENGINE = ReplacingMergeTree
 PARTITION BY `exchange`
-ORDER BY `trading_day`;
+ORDER BY (`date`, `exchange`);
 
 -- This table stores original tick (0.5s snapshot) data (cleaned by ETL process).
 CREATE TABLE IF NOT EXISTS HistoryTick (
