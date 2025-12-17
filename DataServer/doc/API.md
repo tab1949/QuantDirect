@@ -46,9 +46,9 @@ Response:
 
 ----------------------
 ### **Futures**
-**0. Trading Calender** 
+**0. Trading Calendar** 
 
-Name: `"calender"`;  
+Name: `"calendar"`;  
 
 Parameters:  
 | Name | Type | Required? | Description | Comment |
@@ -72,7 +72,7 @@ Fields:
   * Body: 
     ```json
     {
-      "api": "calender",
+      "api": "calendar",
       "token": "xxx",
       "param": {
         "exchange": "DCE"

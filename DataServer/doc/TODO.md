@@ -1,6 +1,6 @@
 # QuantDirect Data Server TODO List
 Here listed unfinished tasks. For detailed interface description, see [API.md](./API.md).
-## 1. Refactor
+## 0. Refactor
 - Build the API server using **golang**;
 - Build a docker **container**;  
 
@@ -28,11 +28,30 @@ Here listed unfinished tasks. For detailed interface description, see [API.md](.
 
 ```
 
+## 1. Database Building & Importing Scripts
+The database building script describes the database structure;  
+The data importing scripts should be able to import initial data and incremental data.
+### Futures
+- [x] Trading Calendar
+- [ ] Contract Information
+- [ ] History Tick
+- [ ] History Minute
+- [ ] History Day
+- [ ] Daily Rank
+
+### Options
+- [ ] Options List
+- [ ] History Tick
+- [ ] History Minute
+- [ ] History Day
+
+### Stocks
+- Pending
 ## 2. RESTful API
 
 ### Futures Query:
 - [ ] Contract Information (**Single** / **Combination**)
-- [ ] Trading Calender (**Period**)
+- [ ] Trading Calendar (**Period**)
 - [ ] History Market Data (**Period**: 0.5s / 1s / 1min / 1h / 1d) (**Duration**)
 - [ ] History Broker Position (**Duration** / **Single Day**)
 - [ ] History Warehouse Data (**Duration** / **Single Day**)
