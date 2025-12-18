@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS Contracts (
     `name`        LowCardinality(String),
     `unit`        LowCardinality(String),
     `quotation_unit`      LowCardinality(String),
-    `minimum_variation`   Float32,
+    `minimum_variation`   Decimal32(3),
     `minimum_margin_rate` UInt8,
     `limit_band_rate`     UInt8,
     `last_trading_day`    Date,
@@ -39,17 +39,17 @@ CREATE TABLE IF NOT EXISTS HistoryTick (
     `datetime`    DateTime,
     `millisecond` UInt16,
     `symbol`      LowCardinality(String),
-    `last_price`  Float32,
+    `last_price`  Decimal64(3),
     `volume`      UInt64,
-    `turnover`    Float64,
+    `turnover`    Decimal64(3),
     `open_interest`   UInt64,
-    `average`     Float32,
-    `bid1_price`  Float32,
+    `average`     Decimal64(3),
+    `bid1_price`  Decimal64(3),
     `bid1_volume` UInt64,
-    `ask1_price`  Float32,
+    `ask1_price`  Decimal64(3),
     `ask1_volume` UInt64,
-    `upper_limit` Float32,
-    `lower_limit` Float32,
+    `upper_limit` Decimal64(3),
+    `lower_limit` Decimal64(3),
     `object`      LowCardinality(String) MATERIALIZED substring(`symbol`, 1, 2)
 )
 ENGINE = ReplacingMergeTree
@@ -64,14 +64,14 @@ CREATE TABLE IF NOT EXISTS HistoryMinute (
     `datetime`     DateTime,
     `symbol`       LowCardinality(String),
     `volume`       UInt64,
-    `turnover`     Float64,
+    `turnover`     Decimal64(3),
     `open_interest` UInt64,
-    `open`         Float32,
-    `close`        Float32,
-    `high`         Float32,
-    `low`          Float32,
-    `upper_limit`  Float32,
-    `lower_limit`  Float32
+    `open`         Decimal64(3),
+    `close`        Decimal64(3),
+    `high`         Decimal64(3),
+    `low`          Decimal64(3),
+    `upper_limit`  Decimal64(3),
+    `lower_limit`  Decimal64(3)
 )
 ENGINE = ReplacingMergeTree
 PARTITION BY toYYYYMM(`datetime`)
@@ -101,9 +101,9 @@ CREATE TABLE IF NOT EXISTS OptionsList (
     `name`        LowCardinality(String),
     `asset`       LowCardinality(String),
     `quotation_unit`      LowCardinality(String),
-    `minimum_variation`   Float32,
+    `minimum_variation`   Decimal64(3),
     `option_type` FixedString(1), -- 'C' for Call, 'P' for Put
-    `exercise_price`   Float32,
+    `exercise_price`   Decimal64(3),
     `last_trading_day` Date,
     `list_date`   Date
 )
@@ -112,19 +112,21 @@ PARTITION BY `exchange`
 ORDER BY (`exchange`, `code`);
 
 -- This table stores history tick data (0.5s snapshot) for options contracts.
-CREATE TABLE IF NOT EXISTS OptionsHistoryTick (
+CREATE TABLE IF NOT EXISTS OptionsTick (
     `datetime`    DateTime,
     `millisecond` UInt16,
     `symbol`      LowCardinality(String),
-    `last_price`  Float32,
+    `last_price`  Decimal64(3),
     `volume`      UInt64,
-    `turnover`    Float64,
+    `turnover`    Decimal64(3),
     `open_interest`   UInt64,
-    `bid1_price`  Float32,
+    `bid1_price`  Decimal64(3),
     `bid1_volume` UInt64,
-    `ask1_price`  Float32,
+    `ask1_price`  Decimal64(3),
     `ask1_volume` UInt64,
-    `object`      LowCardinality(String) MATERIALIZED substring(`symbol`, 1, 2)
+    `contract`    LowCardinality(String) MATERIALIZED upper(replaceRegexpAll(replaceAll(`symbol`, '-', ''), '([cCpP][0-9]+)$', '')),
+    `direction`   FixedString(1) MATERIALIZED upper(substring(replaceAll(`symbol`, '-', ''), length(`contract`) + 1, 1)),
+    `act_price`   Decimal64(3) MATERIALIZED toDecimal64(substring(replaceAll(`symbol`, '-', ''), length(`contract`) + 2, length(`symbol`) - length(`contract`) - 1), 3)
 )
 ENGINE = ReplacingMergeTree
 PARTITION BY toYYYYMM(`datetime`)
