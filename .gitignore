@@ -3,6 +3,7 @@
 .git
 Server/data_backup
 archived
+target
 *.local.*
 *.old
 

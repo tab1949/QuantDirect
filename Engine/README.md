@@ -14,7 +14,7 @@ Main features:
 - **Easy-to-use**: Edit strategies easily with built-in library;
 - **Reusable Strategy**: Compatible strategy code with QuantDirect App Indicators; 
 - **Standardized I/O**: Formatted JSON I/O for instructions (optional CSV output);
-- **Efficiency**: High performance computing based on multithread;
+- **Efficiency**: High performance computing;
 - **Live Support**: Realtime deciding (if connected with realtime data server);
 - **Replay**: Connect with QuantDirect App to replay history market;
 - **Configurable**: Diverse configurable parameters like:
