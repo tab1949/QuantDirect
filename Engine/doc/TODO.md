@@ -2,12 +2,16 @@
 This file lists the tasks to do.
 
 ## Main Program
-- [ ] Arguments Parsing
-- [ ] Configuration Reading
+- [ ] Configuration 
+  - [ ] Command Line
+  - [ ] JSON File
 
 ## Data Source Adaptation
 - [ ] QuantDirect Data Server
-- [ ] Local files
+- [ ] Local Files
+  - [ ] Compressed (ZIP/TGZ/...)
+  - [ ] CSV
+  - [ ] JSON
 
 ## WebSocket Service
 - [ ] Test Instruction Handling
@@ -30,3 +34,9 @@ This file lists the tasks to do.
 ## Quantitative Trading
 - [ ] Strategy Performing
 - [ ] Risk-Controlling
+  - [ ] Capital Pool
+  - [ ] Variable Monitoring 
+    - [ ] Assets
+    - [ ] Price
+    - [ ] Customized
+  - [ ] Strategies with Priority
