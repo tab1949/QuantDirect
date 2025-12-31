@@ -8,13 +8,12 @@ You can start QDEngine with command-line flags or with a JSON config file passed
 | :---- | :--- | :------ | :---------- |
 | `host` | string | `"localhost"` | Hostname to listen on. |
 | `port` | number | `8888` | Port to listen on (1–65535). |
-| `data_source` | string | `"api"` | Data source: `"file"` or `"api"`. |
 | `data_format` | string | `"CSV"` | Source data format: `"CSV"` or `"JSON"`. |
-| `data_file` | string | `""` | Directory mapping for file data, e.g. `"futures_tick=./ticks"`. |
-| `data_api` | string | `""` | API mapping for remote data, e.g. `"futures_tick=https://tabxx.net/api"`. |
+| `data_file_options` | object | `{}` | Directory mapping for file data. Keys from the list below, values are local paths. |
+| `data_api_options` | object | `{}` | API mapping for remote data. Keys from the list below, values are URLs. |
 
 #### Fields for `data_file` / `data_api`
-Use `<data>=<path>` for `data_file` and `<data>=<URL>` for `data_api`. Valid `<data>` values:
+Use `<data>=<path>` for `data_file_options` and `<data>=<URL>` for `data_api_options`. Valid `<data>` values:
 
 | Data key | Description |
 | :------- | :---------- |
@@ -32,14 +31,30 @@ Use `<data>=<path>` for `data_file` and `<data>=<URL>` for `data_api`. Valid `<d
 {
 	"host": "0.0.0.0",
 	"port": 9000,
-	"data_source": "file",
 	"data_format": "CSV",
-	"data_file": {
-        "futures_tick": "./ticks"
-    }
+	"data_file_options": {
+		"futures_contracts": "./data/contracts",
+		"futures_calendar": "./data/calendar",
+		"futures_tick": "./data/ticks",
+		"futures_minute": "./data/minute",
+		"futures_daily_rank": "./data/daily_rank",
+		"options_list": "./data/options_list",
+		"options_tick": "./data/options_ticks"
+	},
+	"data_api_options": {
+		"futures_contracts": "https://example.com/contracts",
+		"futures_calendar": "https://example.com/calendar",
+		"futures_tick": "",
+		"futures_minute": "",
+		"futures_daily_rank": "",
+		"options_list": "",
+		"options_tick": "https://example.com/options/ticks"
+	}
 }
 ```
 
 ### Notes
 - Command-line flags override these values when both are provided.
 - If a field is omitted, QDEngine uses the default shown above.
+- You can mix local files and remote APIs: set `data_file_options` for data you store on disk and `data_api_options` for data you fetch over HTTP.
+- For each data key, provide at least one source (file or API). Supplying both is allowed (redundant) if you want a fallback, but leaving a key absent means that dataset is unavailable.

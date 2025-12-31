@@ -6,16 +6,17 @@ fn main() -> ExitCode {
     use args::Config;
     use args::Mode;
 
-    let config = Config::parse(std::env::args());
+    let config = Config::parse(&mut std::env::args());
+    
     match config.mode {
-        Mode::Help => args::print_help(),
-        Mode::Version => args::print_version(),
-        Mode::Server => {
+        Some(Mode::Help) => args::print_help(),
+        Some(Mode::Version) => args::print_version(),
+        Some(Mode::Server) => {
             println!("This program is not completed...");
         }
-        Mode::Unknown => {
+        None => {
             return ExitCode::FAILURE;
         }
     }
-    ExitCode::SUCCESS
+    return ExitCode::SUCCESS;
 }

@@ -28,10 +28,12 @@ The chart below displays available command line options.
 |`--host`|`-H`|Y|`localhost`|Specify the host name to listen||
 |`--port`|`-p`|Y|`8888`|Specify the port to listen|1~65535|
 |`--config`|`-c`|Y|None|Specify the config file|.json|
-|`--data-source`|`-d`|Y|`api`|Specify the data source|`file` or `api`|
 |`--data-format`|`-F`|Y|`CSV`|Specify the format of source data.|`CSV` or `JSON`|
 |`--data-file`||Y||Specify the directory of data files|Format: `<data>=<path>`, like `--data-file futures_tick=./ticks`. Available `<data>` options listed in [Fields and Values](#fields-and-values) section.|
 |`--data-api`||Y||Specify the data API|Format: `<data>=<URL>`, like `--data-api futures_tick=https://tabxx.net/api`. Available `<data>` options listed in [Fields and Values](#fields-and-values)|
+
+You can mix local and remote data: use `--data-file` for datasets you keep on disk and `--data-api` for datasets you fetch over HTTP. Provide whichever keys you need; missing keys fall back to defaults or stay unused.
+For each data key, supply at least one source (file or API). Providing both is acceptable (redundant) if you want an alternate, but omitting a key means that dataset will be unavailable.
 
 ## Fields and Values
 - `--data-file`
