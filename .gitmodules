@@ -4,3 +4,6 @@
 [submodule "QDEngine"]
 	path = QDEngine
 	url = https://github.com/tab1949/QDEngine.git
+[submodule "QDServer"]
+	path = QDServer
+	url = https://github.com/tab1949/QDServer.git
