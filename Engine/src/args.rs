@@ -1,4 +1,4 @@
-use serde::{ Deserialize, Serialize };
+use serde::{Deserialize, Serialize};
 use serde_json;
 use std::fs;
 
@@ -6,14 +6,13 @@ use std::fs;
 pub enum Mode {
     Help,
     Version,
-    Server
+    Server,
 }
-
 
 #[derive(Deserialize, Serialize, Debug)]
 pub enum DataFormat {
     CSV,
-    JSON
+    JSON,
 }
 
 #[derive(Deserialize, Serialize, Debug, Default)]
@@ -121,38 +120,38 @@ fn check_config(config: &mut Config) {
 }
 
 fn merge_data_options(base: &mut DataOptions, incoming: &DataOptions) {
-    if let Some(v) = &incoming.futures_contracts { 
-        base.futures_contracts = Some(v.clone()); 
+    if let Some(v) = &incoming.futures_contracts {
+        base.futures_contracts = Some(v.clone());
     }
-    if let Some(v) = &incoming.futures_calendar { 
-        base.futures_calendar = Some(v.clone()); 
+    if let Some(v) = &incoming.futures_calendar {
+        base.futures_calendar = Some(v.clone());
     }
-    if let Some(v) = &incoming.futures_tick { 
-        base.futures_tick = Some(v.clone()); 
+    if let Some(v) = &incoming.futures_tick {
+        base.futures_tick = Some(v.clone());
     }
-    if let Some(v) = &incoming.futures_minute { 
-        base.futures_minute = Some(v.clone()); 
+    if let Some(v) = &incoming.futures_minute {
+        base.futures_minute = Some(v.clone());
     }
-    if let Some(v) = &incoming.futures_daily_rank { 
-        base.futures_daily_rank = Some(v.clone()); 
+    if let Some(v) = &incoming.futures_daily_rank {
+        base.futures_daily_rank = Some(v.clone());
     }
-    if let Some(v) = &incoming.options_list { 
-        base.options_list = Some(v.clone()); 
+    if let Some(v) = &incoming.options_list {
+        base.options_list = Some(v.clone());
     }
-    if let Some(v) = &incoming.options_tick { 
-        base.options_tick = Some(v.clone()); 
+    if let Some(v) = &incoming.options_tick {
+        base.options_tick = Some(v.clone());
     }
 }
 
 fn merge_config(base: &mut Config, incoming: Config) {
-    if let Some(v) = incoming.host { 
-        base.host = Some(v); 
+    if let Some(v) = incoming.host {
+        base.host = Some(v);
     }
     if let Some(v) = incoming.port {
-        base.port = Some(v); 
+        base.port = Some(v);
     }
     if let Some(v) = incoming.data_format {
-        base.data_format = Some(v); 
+        base.data_format = Some(v);
     }
 
     merge_data_options(&mut base.data_file_options, &incoming.data_file_options);
@@ -256,7 +255,7 @@ impl Config {
                     match arg.parse::<u16>() {
                         Ok(port) if port > 0 && port < 65535 => {
                             ret.port = Some(port);
-                        },
+                        }
                         _ => {
                             ret.mode = None;
                             eprintln!("Invalid port: {}", arg);
@@ -265,7 +264,7 @@ impl Config {
                         }
                     }
                 } else if need_value_for == "config" {
-                    read_config_file(&arg,  &mut ret);
+                    read_config_file(&arg, &mut ret);
                 } else if need_value_for == "data_format" {
                     let upper = arg.to_ascii_uppercase();
                     if upper == "CSV" {
@@ -291,25 +290,25 @@ impl Config {
                     match key.as_str() {
                         "futures_contracts" => {
                             ret.data_file_options.futures_contracts = Some(value);
-                        },
+                        }
                         "futures_calendar" => {
                             ret.data_file_options.futures_calendar = Some(value);
-                        },
+                        }
                         "futures_tick" => {
                             ret.data_file_options.futures_tick = Some(value);
-                        },
+                        }
                         "futures_minute" => {
                             ret.data_file_options.futures_minute = Some(value);
-                        },
+                        }
                         "futures_daily_rank" => {
                             ret.data_file_options.futures_daily_rank = Some(value);
-                        },
+                        }
                         "options_list" => {
                             ret.data_file_options.options_list = Some(value);
-                        },
+                        }
                         "options_tick" => {
                             ret.data_file_options.options_tick = Some(value);
-                        },
+                        }
                         _ => {
                             ret.mode = None;
                             eprintln!("Unknown data file key: {}", key);
@@ -317,7 +316,6 @@ impl Config {
                             break;
                         }
                     }
-                    
                 } else if need_value_for == "data_api" {
                     let (key, value) = match parse_setting(&arg) {
                         Ok(kv) => kv,
@@ -331,25 +329,25 @@ impl Config {
                     match key.as_str() {
                         "futures_contracts" => {
                             ret.data_api_options.futures_contracts = Some(value);
-                        },
+                        }
                         "futures_calendar" => {
                             ret.data_api_options.futures_calendar = Some(value);
-                        },
+                        }
                         "futures_tick" => {
                             ret.data_api_options.futures_tick = Some(value);
-                        },
+                        }
                         "futures_minute" => {
                             ret.data_api_options.futures_minute = Some(value);
-                        },
+                        }
                         "futures_daily_rank" => {
                             ret.data_api_options.futures_daily_rank = Some(value);
-                        },
+                        }
                         "options_list" => {
                             ret.data_api_options.options_list = Some(value);
-                        },
+                        }
                         "options_tick" => {
                             ret.data_api_options.options_tick = Some(value);
-                        },
+                        }
                         _ => {
                             ret.mode = None;
                             eprintln!("Unknown data API key: {}", key);
@@ -357,7 +355,7 @@ impl Config {
                             break;
                         }
                     }
-                }  
+                }
                 need_value_for.clear();
             } else {
                 ret.mode = None;
@@ -379,7 +377,6 @@ impl Config {
     }
 }
 
-
 pub fn print_help() {
     println!("Usage: qd-engine [OPTIONS]");
     println!("Options:");
@@ -390,8 +387,12 @@ pub fn print_help() {
     println!("  -c, --config <FILE>        Specify the config file (.json)");
     println!("The following options can be set in the config file:");
     println!("  -F, --data-format <FMT>    Specify the data format (CSV or JSON, default: CSV)");
-    println!("      --data-file <DATA=PATH>  Specify directory of data files (e.g., futures_tick=./ticks)");
-    println!("      --data-api <DATA=URL>    Specify the data API (e.g., futures_tick=https://tabxx.net/api)");
+    println!(
+        "      --data-file <DATA=PATH>  Specify directory of data files (e.g., futures_tick=./ticks)"
+    );
+    println!(
+        "      --data-api <DATA=URL>    Specify the data API (e.g., futures_tick=https://tabxx.net/api)"
+    );
 }
 
 pub fn print_version() {

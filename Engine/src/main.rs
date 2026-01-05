@@ -1,18 +1,27 @@
 mod args;
+mod server;
+mod adaptor;
 
 use std::process::ExitCode;
 
-fn main() -> ExitCode {
+#[tokio::main]
+async fn main() -> ExitCode {
     use args::Config;
     use args::Mode;
 
     let config = Config::parse(&mut std::env::args());
-    
+
     match config.mode {
-        Some(Mode::Help) => args::print_help(),
-        Some(Mode::Version) => args::print_version(),
+        Some(Mode::Help) => {
+            args::print_help();
+            return ExitCode::SUCCESS;
+        }
+        Some(Mode::Version) => {
+            args::print_version();
+            return ExitCode::SUCCESS;
+        }
         Some(Mode::Server) => {
-            println!("This program is not completed...");
+            server::main_process(&config).await;
         }
         None => {
             return ExitCode::FAILURE;

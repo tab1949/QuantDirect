@@ -2,9 +2,9 @@
 This file lists the tasks to do.
 
 ## Main Program
-- [ ] Configuration 
-  - [ ] Command Line
-  - [ ] JSON File
+- [x] Configuration 
+  - [x] Command Line
+  - [x] JSON File
 
 ## Data Source Adaptation
 - [ ] QuantDirect Data Server

@@ -24,4 +24,5 @@ Main features:
 
 ## Data source
 QuantDirect is designed to build a history market data server, which provides data access through HTTP RESTful API.  
-QDEngine can be set to use this data server, or use other data sources like local CSV files. You just need to simply configure the engine. (See [doc/config.md](./doc/config.md))
+QDEngine can be set to use this data server, or use other data sources (like local CSV files). You just need to simply configure the engine. (See [doc/config.md](./doc/config.md))  
+*(By the way, When you are using local files as data source, the QDEngine itself is a WebSocket data server actually. See [doc/usage.md](./doc/usage.md))*
