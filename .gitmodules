@@ -1,6 +1,6 @@
 [submodule "WebCTP"]
 	path = WebCTP
 	url = https://github.com/tab1949/WebCTP.git
-[submodule "Engine"]
-	path = Engine
+[submodule "QDEngine"]
+	path = QDEngine
 	url = https://github.com/tab1949/QDEngine.git
