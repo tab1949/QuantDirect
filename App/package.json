@@ -28,11 +28,14 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "electron": "^32.2.0",
-    "electron-builder": "^24.13.3",
+    "electron": "^35.7.5",
+    "electron-builder": "^26.4.0",
     "eslint": "^9",
-    "eslint-config-next": "15.5.2",
+    "eslint-config-next": "^16.0.10",
     "typescript": "^5"
+  },
+  "overrides": {
+    "tar": "^7.5.3"
   },
   "build": {
     "appId": "net.tabxx.quantdirect",
