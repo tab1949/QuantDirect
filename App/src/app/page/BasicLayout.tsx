@@ -6,21 +6,19 @@ import Image from "next/image";
 import ExplorePage from "./Explore/Page";
 import HomePage from "./Home/Page";
 import SettingsPage from "./Settings/Page";
-import { langName, supportedLang, languages } from "../locales/client-i18n";
+import i18n, { getDetectedLanguage } from "../locales/client-i18n";
 import {
   Page,
   CommonHeader,
   HeaderElement,
   HeaderSeparator,
-  SettingsMenuL1,
-  SettingsOption,
   CommonBody,
   CommonFooter,
-  SettingsMenuL2,
   WindowControls,
   WindowControlButton
 } from "../components/BasicLayout";
 import type { WindowFrameState } from "../../types/window-controls";
+import type { AppSettings } from "../../types/settings";
 
 function FooterClock() {
   const [currentTime, setCurrentTime] = useState('');
@@ -54,14 +52,91 @@ function FooterClock() {
   </div>;
 }
 
+const DATA_SOURCE_DEFAULTS = {
+  futuresCalendar: { localPath: '', apiUrl: 'https://data.tabxx.net/api/futures' },
+  futuresContracts: { localPath: '', apiUrl: 'https://data.tabxx.net/api/futures' },
+  futuresTick: { localPath: '', apiUrl: 'https://data.tabxx.net/api/futures' },
+  futures1m: { localPath: '', apiUrl: 'https://data.tabxx.net/api/futures' },
+  brokerPositions: { localPath: '', apiUrl: 'https://data.tabxx.net/api/futures' },
+  optionsContracts: { localPath: '', apiUrl: 'https://data.tabxx.net/api/options' },
+  optionsTick: { localPath: '', apiUrl: 'https://data.tabxx.net/api/options' }
+} as const;
+
+const DEFAULT_SETTINGS: AppSettings = {
+  theme: 'system',
+  language: 'system',
+  marketDataEndpoint: 'ws://localhost:8888/market_data',
+  tradingEndpoint: 'ws://localhost:8888/trading',
+  dataSources: { ...DATA_SOURCE_DEFAULTS }
+};
+
+const normalizeThemeSetting = (theme?: AppSettings['theme']): AppSettings['theme'] => {
+  if (theme === 'dark' || theme === 'light') {
+    return theme;
+  }
+  return 'system';
+};
+
+const normalizeLanguageSetting = (language?: AppSettings['language']): AppSettings['language'] => {
+  if (language === 'en-US' || language === 'zh-CN' || language === 'zh-HK') {
+    return language;
+  }
+  return 'system';
+};
+
+const normalizeSettings = (settings?: Partial<AppSettings> | null): AppSettings => ({
+  theme: normalizeThemeSetting(settings?.theme),
+  language: normalizeLanguageSetting(settings?.language),
+  marketDataEndpoint: typeof settings?.marketDataEndpoint === 'string' && settings.marketDataEndpoint.trim().length > 0
+    ? settings.marketDataEndpoint.trim()
+    : DEFAULT_SETTINGS.marketDataEndpoint,
+  tradingEndpoint: typeof settings?.tradingEndpoint === 'string' && settings.tradingEndpoint.trim().length > 0
+    ? settings.tradingEndpoint.trim()
+    : DEFAULT_SETTINGS.tradingEndpoint,
+  dataSources: (Object.keys(DATA_SOURCE_DEFAULTS) as (keyof typeof DATA_SOURCE_DEFAULTS)[]).reduce((acc, key) => {
+    const entry = settings?.dataSources?.[key];
+    const localPath = typeof entry?.localPath === 'string' ? entry.localPath.trim() : '';
+    const apiUrl = typeof entry?.apiUrl === 'string' ? entry.apiUrl.trim() : '';
+    const hasLocal = Boolean(localPath);
+    const hasApi = Boolean(apiUrl);
+
+    if (hasLocal || hasApi) {
+      acc[key] = {
+        localPath,
+        apiUrl // allow empty when local provided
+      };
+    } else {
+      acc[key] = { ...DATA_SOURCE_DEFAULTS[key] };
+    }
+    return acc;
+  }, {} as AppSettings['dataSources'])
+});
+
+const detectSystemTheme = (): 'dark' | 'light' => {
+  if (typeof window !== 'undefined' && window.matchMedia) {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  return 'dark';
+};
+
+const resolveDarkMode = (settings: AppSettings): boolean => {
+  const theme = settings.theme === 'system' ? detectSystemTheme() : settings.theme;
+  return theme === 'dark';
+};
+
+const resolveLanguage = (settings: AppSettings): AppSettings['language'] => {
+  if (settings.language === 'system') {
+    return getDetectedLanguage();
+  }
+  return settings.language;
+};
+
 export default function BasicLayout() {
   type Page = 'home' | 'explore' | 'research' | 'trading' | 'community' | 'help' | 'dashboard' | 'settings';
-  const { t, i18n } = useTranslation();
-  const [darkMode, setDarkMode] = useState(true);
-  const [settingsL1Opened, setSettingsL1Opened] = useState(false);
-  const [settingsL2Opened, setSettingsL2Opened] = useState(false);
+  const { t } = useTranslation();
+  const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
+  const [darkMode, setDarkMode] = useState(() => resolveDarkMode(DEFAULT_SETTINGS));
   const [settingsPageOpened, setSettingsPageOpened] = useState(false);
-  const [settingsL2Type, setSettingsL2Type] = useState('');
   const [selected, setSelected] = useState<Page>('home');
   const [hasWindowControls, setHasWindowControls] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
@@ -70,37 +145,116 @@ export default function BasicLayout() {
 
   const displayScaleInfoTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  const applySettings = useCallback((next: AppSettings) => {
+    setDarkMode(resolveDarkMode(next));
+    const targetLang = resolveLanguage(next);
+
+    if (i18n.language !== targetLang) {
+      i18n.changeLanguage(targetLang);
+    }
+
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('preferredLanguage', targetLang);
+        localStorage.setItem('appSettings', JSON.stringify(next));
+      } catch (error) {
+        void error;
+      }
+    }
+  }, [i18n]);
+
+  const persistSettings = useCallback(async (next: AppSettings) => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    try {
+      if (window.electronAPI?.settings?.save) {
+        await window.electronAPI.settings.save(next);
+      } else {
+        localStorage.setItem('appSettings', JSON.stringify(next));
+      }
+    } catch (error) {
+      console.error('Failed to save settings', error);
+    }
+  }, []);
+
+  const handleSettingsChange = useCallback((patch: Partial<AppSettings>) => {
+    setSettings((prev) => {
+      const next = normalizeSettings({ ...prev, ...patch });
+      applySettings(next);
+      void persistSettings(next);
+      return next;
+    });
+  }, [applySettings, persistSettings]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadSettings = async () => {
+      let loaded: AppSettings | null = null;
+
+      if (typeof window !== 'undefined') {
+        try {
+          loaded = (await window.electronAPI?.settings?.load()) ?? null;
+        } catch (error) {
+          console.error('Failed to load settings', error);
+        }
+
+        if (!loaded) {
+          try {
+            const stored = localStorage.getItem('appSettings');
+            if (stored) {
+              loaded = normalizeSettings(JSON.parse(stored) as Partial<AppSettings>);
+            }
+          } catch (error) {
+            void error;
+          }
+        }
+      }
+
+      const next = normalizeSettings(loaded ?? DEFAULT_SETTINGS);
+      if (cancelled) {
+        return;
+      }
+
+      setSettings(next);
+      applySettings(next);
+    };
+
+    loadSettings();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [applySettings]);
+
+  useEffect(() => {
+    if (settings.theme !== 'system' || typeof window === 'undefined' || !window.matchMedia) {
+      return undefined;
+    }
+
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const listener = () => {
+      setDarkMode(mediaQuery.matches);
+    };
+
+    listener();
+    mediaQuery.addEventListener('change', listener);
+    return () => mediaQuery.removeEventListener('change', listener);
+  }, [settings.theme]);
+
   const openHome = useCallback(() => {
     setSelected('home');
   }, []);
 
   const openSettingsMenu = useCallback(() => {
-
-    if (settingsL1Opened) {
-      setSettingsL1Opened(false); 
-      setSettingsL2Opened(false);
+    if (settingsPageOpened) {
+      setSettingsPageOpened(false);
     } else {
-      setSettingsL1Opened(true); 
+      setSettingsPageOpened(true);
     }
-  }, [settingsL1Opened]);
-
-  const openLanguageMenu = useCallback(() => {
-    setSettingsL2Type("lang");
-    setSettingsL2Opened(s => !s);
-  }, []);
-
-  const openTradingSettingsMenu = useCallback(() => {
-    setSettingsL2Type("trading");
-    setSettingsL2Opened(s => !s);
-  }, []);
-
-  const changeLanguage = useMemo(() => (lang: string) => {
-    i18n.changeLanguage(lang);
-  }, [i18n]);
-  
-  const toggleDarkMode = useCallback(() => {
-    setDarkMode(prev => !prev);
-  }, []);
+  }, [settingsPageOpened]);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !window.electronAPI) {
@@ -164,44 +318,6 @@ export default function BasicLayout() {
   const handleClose = useCallback(() => {
     window.electronAPI?.close();
   }, []);
-  
-  const SettingsMenuL1Content = useMemo(() => (
-    <SettingsMenuL1 $darkMode={darkMode}>
-      <SettingsOption $darkMode={darkMode} onClick={toggleDarkMode}>
-        <span>{t('basic.theme')}</span>
-        <span>({darkMode ? t('basic.dark') : t('basic.light')})</span>
-      </SettingsOption>
-      <SettingsOption $darkMode={darkMode} onClick={openLanguageMenu}>
-        <span>{t('basic.language')}</span>
-        <span>({i18n.language === 'en-US' ? langName[languages.EN_US] : 
-                i18n.language === 'zh-CN' ? langName[languages.ZH_CN] : langName[languages.ZH_HK]})</span>
-      </SettingsOption>
-      <SettingsOption $darkMode={darkMode} onClick={openTradingSettingsMenu}>
-        {`${t('basic.trading')} ...`}
-      </SettingsOption>
-    </SettingsMenuL1>
-  ), [darkMode, i18n.language, toggleDarkMode, openLanguageMenu, openTradingSettingsMenu, t]);
-
-  const SettingsMenuL2Content = useMemo(() => {
-    switch (settingsL2Type) {
-      case 'lang':
-        return <SettingsMenuL2 $darkMode={darkMode}>
-          {supportedLang.map((v, i) => {
-          return <SettingsOption
-            key={`lang-opt-${i}`}
-            $darkMode={darkMode}
-            onClick={() => { 
-              changeLanguage(v); 
-              setSettingsL2Opened(false); 
-            }}>
-            {langName[i]}
-          </SettingsOption>;
-          })}
-        </SettingsMenuL2>;
-      case 'trading': 
-        setSettingsPageOpened(true);
-    }
-  }, [settingsL2Type, darkMode, changeLanguage]);
 
   const ScaleInfoRect = useMemo(() => displayScaleInfo ? (
     <div
@@ -228,7 +344,6 @@ export default function BasicLayout() {
 
   const page = useMemo(() => {
     let content: ReactElement | null = null;
-    setSettingsPageOpened(false);
     switch (selected) {
       case 'home':
         content = <HomePage />;
@@ -246,8 +361,7 @@ export default function BasicLayout() {
     }
     return <CommonBody $darkMode={darkMode} 
       onClick={()=>{
-        setSettingsL1Opened(false); 
-        setSettingsL2Opened(false);
+        setSettingsPageOpened(false);
       }}>
       {content}
     </CommonBody>
@@ -348,9 +462,14 @@ export default function BasicLayout() {
           )}
 
         </CommonHeader>
-        {settingsPageOpened? <SettingsPage/>: page}
-        {settingsL1Opened && SettingsMenuL1Content}
-        {settingsL2Opened && SettingsMenuL2Content}
+        {page}
+        {settingsPageOpened && (
+          <SettingsPage
+            settings={settings}
+            onChange={handleSettingsChange}
+            darkMode={darkMode}
+          />
+        )}
         {ScaleInfoRect}
         <CommonFooter $darkMode={darkMode}>
           {/* {t('basic.intro')} */}

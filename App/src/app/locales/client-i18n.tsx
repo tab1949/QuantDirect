@@ -2,13 +2,13 @@
 
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
+import type { LanguageSetting } from "../../types/settings";
 
 import lang_ZH_CN from './resource/zh-CN.json';
 import lang_ZH_HK from './resource/zh-HK.json';
 import lang_EN_US from './resource/en-US.json';
 
 export const supportedLang = ['en-US', 'zh-CN', 'zh-HK'];
-export const langName = ['English', '简体中文', '繁體中文'];
 export enum languages {EN_US, ZH_CN, ZH_HK};
 
 export const resources = {
@@ -32,7 +32,7 @@ export const resources = {
     }
 };
 
-function normalizeLangCode(code: string): string {
+function normalizeLangCode(code: string): LanguageSetting {
     if (!code || code === 'undefined' || code === 'null') return 'en-US';
     code = code.toLowerCase().trim().replace(/\s+/g, '');
     if (code === 'en' || code.startsWith('en-') || code === 'english') return 'en-US';
@@ -45,7 +45,7 @@ function normalizeLangCode(code: string): string {
     return 'en-US';
 }
 
-export function getDetectedLanguage(headers?: Headers | Record<string, string>) {
+export function getDetectedLanguage(headers?: Headers | Record<string, string>): LanguageSetting {
     if (typeof window === 'undefined') {
         let langHeader = '';
         if (typeof headers !== 'undefined') {

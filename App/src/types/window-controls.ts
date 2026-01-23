@@ -1,3 +1,5 @@
+import type { SettingsAPI } from './settings';
+
 export type WindowFrameState = 'restored' | 'maximized' | 'fullscreen';
 
 export type WindowControlAction = 'minimize' | 'toggle-maximize' | 'close' | 'get-state';
@@ -11,4 +13,8 @@ export interface WindowControlsAPI {
   getWindowState: () => Promise<WindowFrameState | undefined>;
   onWindowStateChange: (callback: (state: WindowFrameState) => void) => WindowControlsTeardown;
   onWindowScaleChange: (callback: (scale: number) => void) => WindowControlsTeardown;
+}
+
+export interface ElectronAPI extends WindowControlsAPI {
+  settings?: SettingsAPI;
 }

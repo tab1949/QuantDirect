@@ -1,9 +1,9 @@
-import type { WindowControlsAPI } from './types/window-controls';
+import type { ElectronAPI } from './types/window-controls';
 
 export {};
 
 declare global {
   interface Window {
-    electronAPI?: WindowControlsAPI;
+    electronAPI?: ElectronAPI;
   }
 }

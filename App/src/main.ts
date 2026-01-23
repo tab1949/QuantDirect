@@ -1,10 +1,12 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import type { Input } from 'electron';
 import fs from 'node:fs';
+import fsPromises from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import type { WindowControlAction, WindowFrameState } from './types/window-controls';
+import type { AppSettings, DataSourceKey, DataSourceEntry, LanguageSetting, ThemeSetting } from './types/settings';
 
 const isDevelopment = process.env.NODE_ENV === 'development';
 
@@ -27,9 +29,130 @@ const ZOOM_STEP = 0.1;
 const MIN_ZOOM = 0.5;
 const MAX_ZOOM = 3;
 
+const DEFAULT_MARKET_ENDPOINT = 'ws://localhost:8888/market_data';
+const DEFAULT_TRADING_ENDPOINT = 'ws://localhost:8888/trading';
+const DATA_SOURCE_DEFAULTS: Record<DataSourceKey, DataSourceEntry> = {
+  futuresCalendar: { localPath: '', apiUrl: 'https://data.tabxx.net/api/futures' },
+  futuresContracts: { localPath: '', apiUrl: 'https://data.tabxx.net/api/futures' },
+  futuresTick: { localPath: '', apiUrl: 'https://data.tabxx.net/api/futures' },
+  futures1m: { localPath: '', apiUrl: 'https://data.tabxx.net/api/futures' },
+  brokerPositions: { localPath: '', apiUrl: 'https://data.tabxx.net/api/futures' },
+  optionsContracts: { localPath: '', apiUrl: 'https://data.tabxx.net/api/options' },
+  optionsTick: { localPath: '', apiUrl: 'https://data.tabxx.net/api/options' }
+};
+
+const getSettingsFilePath = () => path.join(app.getPath('userData'), SETTINGS_FILENAME);
+
+const normalizeTheme = (value: unknown): ThemeSetting => {
+  if (value === 'dark') {
+    return 'dark';
+  }
+  if (value === 'light') {
+    return 'light';
+  }
+  return 'system';
+};
+
+const normalizeLanguage = (value: unknown): LanguageSetting => {
+  if (value === 'system') {
+    return 'system';
+  }
+
+  if (typeof value !== 'string') {
+    return 'system';
+  }
+
+  const normalized = value.trim().toLowerCase();
+  if (normalized.startsWith('en')) {
+    return 'en-US';
+  }
+  if (normalized === 'zh-cn' || normalized === 'zh-hans' || normalized === 'zh-sg' || normalized === 'zh') {
+    return 'zh-CN';
+  }
+  if (normalized === 'zh-hk' || normalized === 'zh-tw' || normalized === 'zh-hant' || normalized === 'zh-mo') {
+    return 'zh-HK';
+  }
+
+  return 'system';
+};
+
+const normalizeSettings = (settings?: Partial<AppSettings> | null): AppSettings => ({
+  theme: normalizeTheme(settings?.theme),
+  language: normalizeLanguage(settings?.language),
+  marketDataEndpoint: typeof settings?.marketDataEndpoint === 'string' && settings.marketDataEndpoint.trim().length > 0
+    ? settings.marketDataEndpoint.trim()
+    : DEFAULT_MARKET_ENDPOINT,
+  tradingEndpoint: typeof settings?.tradingEndpoint === 'string' && settings.tradingEndpoint.trim().length > 0
+    ? settings.tradingEndpoint.trim()
+    : DEFAULT_TRADING_ENDPOINT,
+  dataSources: (Object.keys(DATA_SOURCE_DEFAULTS) as DataSourceKey[]).reduce<Record<DataSourceKey, DataSourceEntry>>((acc, key) => {
+    const entry = settings?.dataSources?.[key];
+    const localPath = typeof entry?.localPath === 'string' ? entry.localPath.trim() : '';
+    const apiUrl = typeof entry?.apiUrl === 'string' ? entry.apiUrl.trim() : '';
+    const hasLocal = Boolean(localPath);
+    const hasApi = Boolean(apiUrl);
+
+    if (hasLocal || hasApi) {
+      acc[key] = {
+        localPath,
+        apiUrl: apiUrl // allow empty when local provided
+      };
+    } else {
+      acc[key] = { ...DATA_SOURCE_DEFAULTS[key] };
+    }
+    return acc;
+  }, {} as Record<DataSourceKey, DataSourceEntry>)
+});
+
+const defaultSettings = (): AppSettings => ({
+  theme: 'system',
+  language: 'system',
+  marketDataEndpoint: DEFAULT_MARKET_ENDPOINT,
+  tradingEndpoint: DEFAULT_TRADING_ENDPOINT,
+  dataSources: { ...DATA_SOURCE_DEFAULTS }
+});
+
+const readSettingsFromDisk = async (): Promise<AppSettings | null> => {
+  const settingsPath = getSettingsFilePath();
+  try {
+    const raw = await fsPromises.readFile(settingsPath, 'utf8');
+    const parsed = JSON.parse(raw) as Partial<AppSettings>;
+    return normalizeSettings(parsed);
+  } catch {
+    return null;
+  }
+};
+
+const writeSettingsToDisk = async (settings: AppSettings) => {
+  const settingsPath = getSettingsFilePath();
+  await fsPromises.mkdir(path.dirname(settingsPath), { recursive: true });
+  await fsPromises.writeFile(settingsPath, JSON.stringify(settings, null, 2), 'utf8');
+};
+
+const ensureSettings = async (): Promise<AppSettings> => {
+  const existing = await readSettingsFromDisk();
+  if (existing) {
+    return existing;
+  }
+
+  const defaults = defaultSettings();
+  await writeSettingsToDisk(defaults);
+  return defaults;
+};
+
+const saveSettings = async (settings: AppSettings): Promise<AppSettings> => {
+  const normalized = normalizeSettings(settings);
+  await writeSettingsToDisk(normalized);
+  return normalized;
+};
+
 const WINDOW_CONTROL_CHANNEL = 'window-control';
 const WINDOW_STATE_CHANNEL = 'window-state-change';
 const WINDOW_SCALE_CHANNEL = 'window-scale-change';
+const SETTINGS_LOAD_CHANNEL = 'app-settings-load';
+const SETTINGS_SAVE_CHANNEL = 'app-settings-save';
+const SETTINGS_PATH_CHANNEL = 'app-settings-path';
+const SETTINGS_FILENAME = 'settings.json';
 
 let mainWindow: BrowserWindow | null = null;
 const gotTheLock = app.requestSingleInstanceLock();
@@ -239,6 +362,15 @@ ipcMain.handle(WINDOW_CONTROL_CHANNEL, (event, action: WindowControlAction) => {
     default:
       return undefined;
   }
+});
+
+ipcMain.handle(SETTINGS_LOAD_CHANNEL, async () => ensureSettings());
+
+ipcMain.handle(SETTINGS_SAVE_CHANNEL, async (_event, settings: AppSettings) => saveSettings(settings));
+
+ipcMain.handle(SETTINGS_PATH_CHANNEL, async () => {
+  await ensureSettings();
+  return getSettingsFilePath();
 });
 
 if (!gotTheLock) {

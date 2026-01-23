@@ -135,8 +135,9 @@ export const WindowControlButton = styled.button<{ $darkMode: boolean; $variant?
 
 export const CommonBody = styled.div<{ $darkMode: boolean}>`
   user-select: none;
-  position: relative;
-  height: calc(100vh - 70px);
+  position: fixed;
+  top: var(--header-height);
+  height: calc(100vh - 30px - var(--header-height));
   width: 100vw;
   background-color: ${props => props.$darkMode ? 'rgba(26, 32, 44, 0.15)' : 'rgba(229, 231, 235, 0.3)'};
   border-top: 1px solid var(--theme-border-color);
@@ -147,7 +148,7 @@ export const CommonFooter = styled.div<{ $darkMode: boolean}>`
   background-color: ${props => props.$darkMode ? 'rgba(58, 65, 73, 0.6)' : 'rgba(209, 213, 219, 0.6)'};
   color: var(--theme-font-color);
   border-top: 1px solid var(--theme-border-color);
-  position: relative;
+  position: fixed;
   left: 0;
   bottom: 0;
   width: 100vw;
@@ -156,53 +157,6 @@ export const CommonFooter = styled.div<{ $darkMode: boolean}>`
   justify-content: center;
   align-items: center;
   font-size: 15px;
-`;
-
-export const SettingsMenuL1 = styled.div<{ $darkMode: boolean}>`
-  background-color: ${props => props.$darkMode ? 'rgba(58, 65, 73, 0.9)' : 'rgba(243, 244, 246, 0.95)'};
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--theme-border-color);
-  box-shadow: ${props => props.$darkMode ? 
-    '0 10px 25px rgba(255, 255, 255, 0.1)' : 
-    '0 10px 25px rgba(0, 0, 0, 0.1)'};
-  position: fixed;
-  --width: 160px;
-  width: var(--width);
-  height: auto;
-  top: calc(var(--header-height) + 2px);
-  left: 1px;
-  display: grid;
-  grid-column: 1;
-  align-items: start;
-  justify-items: start;
-  border-radius: 8px;
-`;
-
-export const SettingsMenuL2 = styled(SettingsMenuL1)`
-    position: fixed;
-    left: calc(var(--width) + 3px);
-    width: auto;
-    height: auto;
-`;
-
-export const SettingsOption = styled.div<{ $darkMode: boolean}>`
-  user-select: none;
-  --normal-bg-color: rgba(121, 143, 173, 0.087);
-  --hover-bg-color: ${props => props.$darkMode ? 'rgba(90, 100, 112, 0.3)' : 'rgba(209, 213, 219, 0.6)'};
-  --normal-color: var(--theme-font-color);
-  --hover-color: var(--theme-font-color-hover);
-  ${Animation.hover_color_change}
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  height: max-content;
-  position: relative;
-  font-size: 14px;
-  width: 98%;
-  margin: 2px;
-  padding: 5px 10px;
-  border: 0;
-  border-radius: 6px;
 `;
 
 export const Div = styled.div`
