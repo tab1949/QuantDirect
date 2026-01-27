@@ -1,5 +1,5 @@
 import {styled, css } from "styled-components";
-import * as Animation from "../page/Animation";
+import * as Animation from "../Animation";
 
 export const Page = styled.div<{ $darkMode: boolean}>`
   background-color: var(--theme-background-color);

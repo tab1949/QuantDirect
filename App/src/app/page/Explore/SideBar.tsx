@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import * as Basic from "../../components/BasicLayout";
+import * as Basic from "../components/BasicLayout";
 
 const SideBarContainer = styled.div`
     user-select: none;

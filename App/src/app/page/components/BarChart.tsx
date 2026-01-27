@@ -1,7 +1,7 @@
 import { useMemo, ReactElement, memo, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { StaticMarketData, SUB_CHART_INDICATOR_OPTIONS } from '../calculate/MarketData';
-import { GetIndicatorByName } from '../calculate/Indicators';
+import { StaticMarketData, SUB_CHART_INDICATOR_OPTIONS } from '../utils/MarketData';
+import { GetIndicatorByName } from '../utils/Indicators';
 
 export interface BarChartContentInterface {
     data: StaticMarketData;

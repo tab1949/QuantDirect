@@ -3,8 +3,11 @@
 import { useMemo, useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { ListItem, ScrollList } from '../../components/BasicLayout';
+import { getDetectedLanguage } from '../locales/client-i18n';
+import { ListItem, ScrollList } from '../components/BasicLayout';
 import type { AppSettings, DataSourceKey, DataSourceEntry } from '../../../types/settings';
+import type { ElectronAPI } from '../../../types/window-controls';
+import { normalizeTradingAccount } from "../utils/validation";
 
 type SettingsPageProps = {
     settings: AppSettings;
@@ -35,6 +38,87 @@ type EndpointEditorProps = {
     onChange: (value: string) => void;
     t: ReturnType<typeof useTranslation>['t'];
 };
+
+export const DATA_SOURCE_DEFAULTS = {
+  futuresCalendar: { localPath: '', apiUrl: 'https://data.tabxx.net/api/futures' },
+  futuresContracts: { localPath: '', apiUrl: 'https://data.tabxx.net/api/futures' },
+  futuresTick: { localPath: '', apiUrl: 'https://data.tabxx.net/api/futures' },
+  futures1m: { localPath: '', apiUrl: 'https://data.tabxx.net/api/futures' },
+  brokerPositions: { localPath: '', apiUrl: 'https://data.tabxx.net/api/futures' },
+  optionsContracts: { localPath: '', apiUrl: 'https://data.tabxx.net/api/options' },
+  optionsTick: { localPath: '', apiUrl: 'https://data.tabxx.net/api/options' }
+} as const;
+
+export const DEFAULT_SETTINGS: AppSettings = {
+  theme: 'system',
+  language: 'system',
+  marketDataEndpoint: 'ws://localhost:8888/market_data',
+  tradingEndpoint: 'ws://localhost:8888/trading',
+  dataSources: { ...DATA_SOURCE_DEFAULTS },
+  tradingAccount: null
+};
+
+const detectSystemTheme = (): 'dark' | 'light' => {
+  if (typeof window !== 'undefined' && window.matchMedia) {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  return 'dark';
+};
+
+export const resolveDarkMode = (settings: AppSettings): boolean => {
+  const theme = settings.theme === 'system' ? detectSystemTheme() : settings.theme;
+  return theme === 'dark';
+};
+
+export const resolveLanguage = (settings: AppSettings): AppSettings['language'] => {
+  if (settings.language === 'system') {
+    return getDetectedLanguage();
+  }
+  return settings.language;
+};
+
+const normalizeThemeSetting = (theme?: AppSettings['theme']): AppSettings['theme'] => {
+  if (theme === 'dark' || theme === 'light') {
+    return theme;
+  }
+  return 'system';
+};
+
+const normalizeLanguageSetting = (language?: AppSettings['language']): AppSettings['language'] => {
+  if (language === 'en-US' || language === 'zh-CN' || language === 'zh-HK') {
+    return language;
+  }
+  return 'system';
+};
+
+export const normalizeSettings = (settings?: Partial<AppSettings> | null): AppSettings => ({
+  theme: normalizeThemeSetting(settings?.theme),
+  language: normalizeLanguageSetting(settings?.language),
+  marketDataEndpoint: typeof settings?.marketDataEndpoint === 'string' && settings.marketDataEndpoint.trim().length > 0
+    ? settings.marketDataEndpoint.trim()
+    : DEFAULT_SETTINGS.marketDataEndpoint,
+  tradingEndpoint: typeof settings?.tradingEndpoint === 'string' && settings.tradingEndpoint.trim().length > 0
+    ? settings.tradingEndpoint.trim()
+    : DEFAULT_SETTINGS.tradingEndpoint,
+  dataSources: (Object.keys(DATA_SOURCE_DEFAULTS) as (keyof typeof DATA_SOURCE_DEFAULTS)[]).reduce((acc, key) => {
+    const entry = settings?.dataSources?.[key];
+    const localPath = typeof entry?.localPath === 'string' ? entry.localPath.trim() : '';
+    const apiUrl = typeof entry?.apiUrl === 'string' ? entry.apiUrl.trim() : '';
+    const hasLocal = Boolean(localPath);
+    const hasApi = Boolean(apiUrl);
+
+    if (hasLocal || hasApi) {
+      acc[key] = {
+        localPath,
+        apiUrl // allow empty when local provided
+      };
+    } else {
+      acc[key] = { ...DATA_SOURCE_DEFAULTS[key] };
+    }
+    return acc;
+  }, {} as AppSettings['dataSources']),
+  tradingAccount: normalizeTradingAccount(settings?.tradingAccount)
+});
 
 function OptionTitle({ title }: { title: string }) {
     return <div style={{ fontWeight: 600, marginBottom: '8px', color: 'var(--theme-font-color)' }}>{title}</div>;
@@ -254,13 +338,15 @@ export default function SettingsPage({ settings, onChange, darkMode }: SettingsP
     const { t } = useTranslation();
     const [selectedCategory, setSelectedCategory] = useState<Category>('general');
     const [settingsPath, setSettingsPath] = useState<string>('');
+    type WindowWithElectron = Window & { electronAPI?: ElectronAPI };
+    const getElectronAPI = () => (typeof window === 'undefined' ? undefined : (window as WindowWithElectron).electronAPI);
 
     useEffect(() => {
         let cancelled = false;
 
         const fetchPath = async () => {
             try {
-                const path = await window.electronAPI?.settings?.getPath?.();
+                const path = await getElectronAPI()?.settings?.getPath?.();
                 if (!cancelled && path) {
                     setSettingsPath(path);
                 }

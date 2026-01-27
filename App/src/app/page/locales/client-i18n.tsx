@@ -2,7 +2,7 @@
 
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
-import type { LanguageSetting } from "../../types/settings";
+import type { LanguageSetting } from "../../../types/settings";
 
 import lang_ZH_CN from './resource/zh-CN.json';
 import lang_ZH_HK from './resource/zh-HK.json';

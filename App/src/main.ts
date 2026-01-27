@@ -7,6 +7,8 @@ import { pathToFileURL } from 'node:url';
 
 import type { WindowControlAction, WindowFrameState } from './types/window-controls';
 import type { AppSettings, DataSourceKey, DataSourceEntry, LanguageSetting, ThemeSetting, TradingAccount } from './types/settings';
+import * as ipcChannel from './ipcChannels';
+import { DATA_SOURCE_DEFAULTS } from './app/page/BasicLayout';
 
 const isDevelopment = process.env.NODE_ENV === 'development';
 
@@ -31,15 +33,6 @@ const MAX_ZOOM = 3;
 
 const DEFAULT_MARKET_ENDPOINT = 'ws://localhost:8888/market_data';
 const DEFAULT_TRADING_ENDPOINT = 'ws://localhost:8888/trading';
-const DATA_SOURCE_DEFAULTS: Record<DataSourceKey, DataSourceEntry> = {
-  futuresCalendar: { localPath: '', apiUrl: 'https://data.tabxx.net/api/futures' },
-  futuresContracts: { localPath: '', apiUrl: 'https://data.tabxx.net/api/futures' },
-  futuresTick: { localPath: '', apiUrl: 'https://data.tabxx.net/api/futures' },
-  futures1m: { localPath: '', apiUrl: 'https://data.tabxx.net/api/futures' },
-  brokerPositions: { localPath: '', apiUrl: 'https://data.tabxx.net/api/futures' },
-  optionsContracts: { localPath: '', apiUrl: 'https://data.tabxx.net/api/options' },
-  optionsTick: { localPath: '', apiUrl: 'https://data.tabxx.net/api/options' }
-};
 
 const getSettingsFilePath = () => path.join(app.getPath('userData'), SETTINGS_FILENAME);
 
@@ -194,12 +187,6 @@ const saveSettings = async (settings: AppSettings): Promise<AppSettings> => {
   return normalized;
 };
 
-const WINDOW_CONTROL_CHANNEL = 'window-control';
-const WINDOW_STATE_CHANNEL = 'window-state-change';
-const WINDOW_SCALE_CHANNEL = 'window-scale-change';
-const SETTINGS_LOAD_CHANNEL = 'app-settings-load';
-const SETTINGS_SAVE_CHANNEL = 'app-settings-save';
-const SETTINGS_PATH_CHANNEL = 'app-settings-path';
 const SETTINGS_FILENAME = 'settings.json';
 
 let mainWindow: BrowserWindow | null = null;
@@ -265,7 +252,7 @@ const sendWindowState = (window: BrowserWindow) => {
 
   const { webContents } = window;
   if (!webContents.isDestroyed()) {
-    webContents.send(WINDOW_STATE_CHANNEL, getWindowFrameState(window));
+    webContents.send(ipcChannel.WINDOW_STATE_CHANNEL, getWindowFrameState(window));
   }
 };
 
@@ -276,7 +263,7 @@ const sendWindowScale = (window: BrowserWindow) => {
 
   const { webContents } = window;
   if (!webContents.isDestroyed()) {
-    webContents.send(WINDOW_SCALE_CHANNEL, webContents.getZoomFactor());
+    webContents.send(ipcChannel.WINDOW_SCALE_CHANNEL, webContents.getZoomFactor());
   }
 }
 
@@ -380,7 +367,7 @@ const createMainWindow = (): BrowserWindow => {
   return window;
 };
 
-ipcMain.handle(WINDOW_CONTROL_CHANNEL, (event, action: WindowControlAction) => {
+ipcMain.handle(ipcChannel.WINDOW_CONTROL_CHANNEL, (event, action: WindowControlAction) => {
   const targetWindow = BrowserWindow.fromWebContents(event.sender);
 
   if (!targetWindow) {
@@ -412,11 +399,11 @@ ipcMain.handle(WINDOW_CONTROL_CHANNEL, (event, action: WindowControlAction) => {
   }
 });
 
-ipcMain.handle(SETTINGS_LOAD_CHANNEL, async () => ensureSettings());
+ipcMain.handle(ipcChannel.SETTINGS_LOAD_CHANNEL, async () => ensureSettings());
 
-ipcMain.handle(SETTINGS_SAVE_CHANNEL, async (_event, settings: AppSettings) => saveSettings(settings));
+ipcMain.handle(ipcChannel.SETTINGS_SAVE_CHANNEL, async (_event, settings: AppSettings) => saveSettings(settings));
 
-ipcMain.handle(SETTINGS_PATH_CHANNEL, async () => {
+ipcMain.handle(ipcChannel.SETTINGS_PATH_CHANNEL, async () => {
   await ensureSettings();
   return getSettingsFilePath();
 });

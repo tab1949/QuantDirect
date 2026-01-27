@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { isValidIpv4, isValidPort } from "../../utils/validation";
+import { isValidIpv4, isValidPort } from "../utils/validation";
 import type { AppSettings, TradingAccount } from "../../../types/settings";
 
 type TradingAccountProps = {

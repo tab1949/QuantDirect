@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo, ReactElement, memo } from "react";
 import { useTranslation } from "react-i18next";
 
-import { CandleStickChartData, MAIN_CHART_INDICATOR_OPTIONS, Indicator, IndicatorDisplay } from '../calculate/MarketData';
-import * as Indicators from "../calculate/Indicators";
+import { CandleStickChartData, MAIN_CHART_INDICATOR_OPTIONS, Indicator, IndicatorDisplay } from '../utils/MarketData';
+import * as Indicators from "../utils/Indicators";
 
 export interface CandleStickChartContentInterface {
     data: {

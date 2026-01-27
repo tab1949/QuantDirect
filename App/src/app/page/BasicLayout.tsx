@@ -7,8 +7,8 @@ import ExplorePage from "./Explore/Page";
 import HomePage from "./Home/Page";
 import SettingsPage from "./Settings/Page";
 import TradingPage from "./Trading/Page";
-import { normalizeTradingAccount } from "../utils/validation";
-import i18n, { getDetectedLanguage } from "../locales/client-i18n";
+import { DATA_SOURCE_DEFAULTS, DEFAULT_SETTINGS, normalizeSettings, resolveDarkMode, resolveLanguage } from "./Settings/Page";
+import i18n from "./locales/client-i18n";
 import {
   Page,
   CommonHeader,
@@ -18,9 +18,11 @@ import {
   CommonFooter,
   WindowControls,
   WindowControlButton
-} from "../components/BasicLayout";
-import type { WindowFrameState } from "../../types/window-controls";
+} from "./components/BasicLayout";
+import type { ElectronAPI, WindowFrameState } from "../../types/window-controls";
 import type { AppSettings } from "../../types/settings";
+
+export { DATA_SOURCE_DEFAULTS };
 
 function FooterClock() {
   const [currentTime, setCurrentTime] = useState('');
@@ -54,90 +56,11 @@ function FooterClock() {
   </div>;
 }
 
-const DATA_SOURCE_DEFAULTS = {
-  futuresCalendar: { localPath: '', apiUrl: 'https://data.tabxx.net/api/futures' },
-  futuresContracts: { localPath: '', apiUrl: 'https://data.tabxx.net/api/futures' },
-  futuresTick: { localPath: '', apiUrl: 'https://data.tabxx.net/api/futures' },
-  futures1m: { localPath: '', apiUrl: 'https://data.tabxx.net/api/futures' },
-  brokerPositions: { localPath: '', apiUrl: 'https://data.tabxx.net/api/futures' },
-  optionsContracts: { localPath: '', apiUrl: 'https://data.tabxx.net/api/options' },
-  optionsTick: { localPath: '', apiUrl: 'https://data.tabxx.net/api/options' }
-} as const;
-
-const DEFAULT_SETTINGS: AppSettings = {
-  theme: 'system',
-  language: 'system',
-  marketDataEndpoint: 'ws://localhost:8888/market_data',
-  tradingEndpoint: 'ws://localhost:8888/trading',
-  dataSources: { ...DATA_SOURCE_DEFAULTS },
-  tradingAccount: null
-};
-
-const normalizeThemeSetting = (theme?: AppSettings['theme']): AppSettings['theme'] => {
-  if (theme === 'dark' || theme === 'light') {
-    return theme;
-  }
-  return 'system';
-};
-
-const normalizeLanguageSetting = (language?: AppSettings['language']): AppSettings['language'] => {
-  if (language === 'en-US' || language === 'zh-CN' || language === 'zh-HK') {
-    return language;
-  }
-  return 'system';
-};
-
-const normalizeSettings = (settings?: Partial<AppSettings> | null): AppSettings => ({
-  theme: normalizeThemeSetting(settings?.theme),
-  language: normalizeLanguageSetting(settings?.language),
-  marketDataEndpoint: typeof settings?.marketDataEndpoint === 'string' && settings.marketDataEndpoint.trim().length > 0
-    ? settings.marketDataEndpoint.trim()
-    : DEFAULT_SETTINGS.marketDataEndpoint,
-  tradingEndpoint: typeof settings?.tradingEndpoint === 'string' && settings.tradingEndpoint.trim().length > 0
-    ? settings.tradingEndpoint.trim()
-    : DEFAULT_SETTINGS.tradingEndpoint,
-  dataSources: (Object.keys(DATA_SOURCE_DEFAULTS) as (keyof typeof DATA_SOURCE_DEFAULTS)[]).reduce((acc, key) => {
-    const entry = settings?.dataSources?.[key];
-    const localPath = typeof entry?.localPath === 'string' ? entry.localPath.trim() : '';
-    const apiUrl = typeof entry?.apiUrl === 'string' ? entry.apiUrl.trim() : '';
-    const hasLocal = Boolean(localPath);
-    const hasApi = Boolean(apiUrl);
-
-    if (hasLocal || hasApi) {
-      acc[key] = {
-        localPath,
-        apiUrl // allow empty when local provided
-      };
-    } else {
-      acc[key] = { ...DATA_SOURCE_DEFAULTS[key] };
-    }
-    return acc;
-  }, {} as AppSettings['dataSources']),
-  tradingAccount: normalizeTradingAccount(settings?.tradingAccount)
-});
-
-const detectSystemTheme = (): 'dark' | 'light' => {
-  if (typeof window !== 'undefined' && window.matchMedia) {
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-  }
-  return 'dark';
-};
-
-const resolveDarkMode = (settings: AppSettings): boolean => {
-  const theme = settings.theme === 'system' ? detectSystemTheme() : settings.theme;
-  return theme === 'dark';
-};
-
-const resolveLanguage = (settings: AppSettings): AppSettings['language'] => {
-  if (settings.language === 'system') {
-    return getDetectedLanguage();
-  }
-  return settings.language;
-};
-
 export default function BasicLayout() {
   type Page = 'home' | 'explore' | 'research' | 'trading' | 'community' | 'help' | 'dashboard' | 'settings';
   const { t } = useTranslation();
+  type WindowWithElectron = Window & { electronAPI?: ElectronAPI };
+  const getElectronAPI = () => (typeof window === 'undefined' ? undefined : (window as WindowWithElectron).electronAPI);
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [darkMode, setDarkMode] = useState(() => resolveDarkMode(DEFAULT_SETTINGS));
   const [settingsPageOpened, setSettingsPageOpened] = useState(false);
@@ -174,8 +97,9 @@ export default function BasicLayout() {
     }
 
     try {
-      if (window.electronAPI?.settings?.save) {
-        await window.electronAPI.settings.save(next);
+      const electronAPI = getElectronAPI();
+      if (electronAPI?.settings?.save) {
+        await electronAPI.settings.save(next);
       } else {
         localStorage.setItem('appSettings', JSON.stringify(next));
       }
@@ -201,7 +125,8 @@ export default function BasicLayout() {
 
       if (typeof window !== 'undefined') {
         try {
-          loaded = (await window.electronAPI?.settings?.load()) ?? null;
+          const electronAPI = getElectronAPI();
+          loaded = (await electronAPI?.settings?.load()) ?? null;
         } catch (error) {
           console.error('Failed to load settings', error);
         }
@@ -263,7 +188,8 @@ export default function BasicLayout() {
   }, [settingsPageOpened]);
 
   useEffect(() => {
-    if (typeof window === 'undefined' || !window.electronAPI) {
+    const electronAPI = getElectronAPI();
+    if (typeof window === 'undefined' || !electronAPI) {
       setHasWindowControls(false);
       return;
     }
@@ -274,9 +200,9 @@ export default function BasicLayout() {
       setIsMaximized(state === 'maximized' || state === 'fullscreen');
     };
 
-    const unsubscribe = window.electronAPI.onWindowStateChange?.(updateState);
+    const unsubscribe = electronAPI.onWindowStateChange?.(updateState);
 
-    window.electronAPI.getWindowState?.()
+    electronAPI.getWindowState?.()
       .then((state) => {
         if (state) {
           updateState(state);
@@ -290,11 +216,12 @@ export default function BasicLayout() {
   }, []);
 
   useEffect(() => {
-    if (typeof window === 'undefined' || !window.electronAPI?.onWindowScaleChange) {
+    const electronAPI = getElectronAPI();
+    if (typeof window === 'undefined' || !electronAPI?.onWindowScaleChange) {
       return undefined;
     }
 
-    const unsubscribe = window.electronAPI.onWindowScaleChange((scale) => {
+    const unsubscribe = electronAPI.onWindowScaleChange((scale) => {
       setDisplayScaleInfo(`${(scale * 100).toFixed(0)}%`);
       if (displayScaleInfoTimeoutRef.current) {
         clearTimeout(displayScaleInfoTimeoutRef.current);
@@ -314,15 +241,15 @@ export default function BasicLayout() {
   }, []);
 
   const handleMinimize = useCallback(() => {
-    window.electronAPI?.minimize();
+    getElectronAPI()?.minimize();
   }, []);
 
   const handleToggleMaximize = useCallback(() => {
-    window.electronAPI?.toggleMaximize();
+    getElectronAPI()?.toggleMaximize();
   }, []);
 
   const handleClose = useCallback(() => {
-    window.electronAPI?.close();
+    getElectronAPI()?.close();
   }, []);
 
   const ScaleInfoRect = useMemo(() => displayScaleInfo ? (

@@ -1,4 +1,4 @@
-import type { AppSettings } from "../../types/settings";
+import type { AppSettings } from "../../../types/settings";
 
 const OCTET_REGEX = /(25[0-5]|2[0-4]\d|1?\d?\d)/;
 const IPV4_REGEX = new RegExp(`^${OCTET_REGEX.source}\.${OCTET_REGEX.source}\.${OCTET_REGEX.source}\.${OCTET_REGEX.source}$`);

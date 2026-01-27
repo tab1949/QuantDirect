@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo, PointerEventHandler, WheelEventHandler, memo } from "react";
 import { useTranslation } from "react-i18next";
 
-import { StaticMarketData, PERIOD_OPTIONS } from '../calculate/MarketData';
+import { StaticMarketData, PERIOD_OPTIONS } from '../utils/MarketData';
 import { CandleStickChart, CandleStickChartContentInterface } from "./CandleStickChart";
 import { BarChart, BarChartContentInterface } from "./BarChart";
 
