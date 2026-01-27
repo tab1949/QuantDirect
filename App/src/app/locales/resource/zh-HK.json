@@ -60,6 +60,20 @@
     "home": {
         "welcome": "歡迎"
     },
+    "tradingPage": {
+        "setup_title": "設置交易賬戶",
+        "setup_desc": "首次使用交易功能前，請填寫交易賬戶與前置伺服器地址。",
+        "user_id": "交易賬戶（user_id）",
+        "broker_id": "經紀商ID",
+        "front_trade_addr": "交易前置伺服器地址",
+        "front_trade_port": "交易前置伺服器端口",
+        "front_market_data_addr": "行情前置伺服器地址",
+        "front_market_data_port": "行情前置伺服器端口",
+        "save": "保存",
+        "validation_error": "請修正標紅的欄位。",
+        "validation_hint": "請輸入所有欄位。",
+        "placeholder": "保存賬號資訊後，將顯示交易工作區。"
+    },
     "explore": {
         "list": {
             "overview": "總覽",

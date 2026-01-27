@@ -60,6 +60,20 @@
     "home": {
         "welcome": "Welcome"
     },
+    "tradingPage": {
+        "setup_title": "Set Up Trading Account",
+        "setup_desc": "Please enter your trading credentials and front server addresses before using the trading workspace.",
+        "user_id": "Trading Account (user_id)",
+        "broker_id": "Broker ID",
+        "front_trade_addr": "Trade Front IPv4",
+        "front_trade_port": "Trade Front Port",
+        "front_market_data_addr": "Market Data Front IPv4",
+        "front_market_data_port": "Market Data Front Port",
+        "save": "Save",
+        "validation_error": "Please fix the highlighted fields.",
+        "validation_hint": "Please fill in all fields.",
+        "placeholder": "Trading workspace will appear here after account information is saved."
+    },
     "explore": {
         "list": {
             "overview": "Overview",

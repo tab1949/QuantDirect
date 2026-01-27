@@ -6,6 +6,8 @@ import Image from "next/image";
 import ExplorePage from "./Explore/Page";
 import HomePage from "./Home/Page";
 import SettingsPage from "./Settings/Page";
+import TradingPage from "./Trading/Page";
+import { normalizeTradingAccount } from "../utils/validation";
 import i18n, { getDetectedLanguage } from "../locales/client-i18n";
 import {
   Page,
@@ -67,7 +69,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   language: 'system',
   marketDataEndpoint: 'ws://localhost:8888/market_data',
   tradingEndpoint: 'ws://localhost:8888/trading',
-  dataSources: { ...DATA_SOURCE_DEFAULTS }
+  dataSources: { ...DATA_SOURCE_DEFAULTS },
+  tradingAccount: null
 };
 
 const normalizeThemeSetting = (theme?: AppSettings['theme']): AppSettings['theme'] => {
@@ -109,7 +112,8 @@ const normalizeSettings = (settings?: Partial<AppSettings> | null): AppSettings 
       acc[key] = { ...DATA_SOURCE_DEFAULTS[key] };
     }
     return acc;
-  }, {} as AppSettings['dataSources'])
+  }, {} as AppSettings['dataSources']),
+  tradingAccount: normalizeTradingAccount(settings?.tradingAccount)
 });
 
 const detectSystemTheme = (): 'dark' | 'light' => {
@@ -141,6 +145,7 @@ export default function BasicLayout() {
   const [hasWindowControls, setHasWindowControls] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
   const [displayScaleInfo, setDisplayScaleInfo] = useState<string | null>(null);
+  const [settingsReady, setSettingsReady] = useState(false);
 
 
   const displayScaleInfoTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -220,6 +225,7 @@ export default function BasicLayout() {
 
       setSettings(next);
       applySettings(next);
+      setSettingsReady(true);
     };
 
     loadSettings();
@@ -351,8 +357,17 @@ export default function BasicLayout() {
       case 'explore':
         content = <ExplorePage />;
         break;
-      case 'research':
       case 'trading':
+        content = (
+          <TradingPage
+            settings={settings}
+            settingsReady={settingsReady}
+            darkMode={darkMode}
+            onChange={handleSettingsChange}
+          />
+        );
+        break;
+      case 'research':
       case 'community':
       case 'help':
       case 'dashboard':
@@ -365,7 +380,7 @@ export default function BasicLayout() {
       }}>
       {content}
     </CommonBody>
-  }, [darkMode, selected]);
+  }, [darkMode, handleSettingsChange, selected, settings, settingsReady]);
 
   return (
     <Page $darkMode={darkMode}>

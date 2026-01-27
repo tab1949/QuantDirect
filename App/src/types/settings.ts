@@ -22,6 +22,16 @@ export interface AppSettings {
   marketDataEndpoint: string;
   tradingEndpoint: string;
   dataSources: Record<DataSourceKey, DataSourceEntry>;
+  tradingAccount: TradingAccount | null;
+}
+
+export interface TradingAccount {
+  user_id: string;
+  broker_id: string;
+  front_trade_addr: string;
+  front_trade_port: number;
+  front_market_data_addr: string;
+  front_market_data_port: number;
 }
 
 export interface SettingsAPI {

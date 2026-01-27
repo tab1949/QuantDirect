@@ -6,7 +6,7 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import type { WindowControlAction, WindowFrameState } from './types/window-controls';
-import type { AppSettings, DataSourceKey, DataSourceEntry, LanguageSetting, ThemeSetting } from './types/settings';
+import type { AppSettings, DataSourceKey, DataSourceEntry, LanguageSetting, ThemeSetting, TradingAccount } from './types/settings';
 
 const isDevelopment = process.env.NODE_ENV === 'development';
 
@@ -76,6 +76,52 @@ const normalizeLanguage = (value: unknown): LanguageSetting => {
   return 'system';
 };
 
+const isValidIpv4 = (value: string): boolean => {
+  const trimmed = value.trim();
+  const octet = '(25[0-5]|2[0-4]\\d|1?\\d?\\d)';
+  const regex = new RegExp(`^${octet}\\.${octet}\\.${octet}\\.${octet}$`);
+  return regex.test(trimmed);
+};
+
+const normalizePort = (value: unknown): number | null => {
+  const port = typeof value === 'string' ? Number.parseInt(value, 10) : Number(value);
+  if (!Number.isInteger(port)) {
+    return null;
+  }
+  return port >= 1 && port <= 65535 ? port : null;
+};
+
+const normalizeTradingAccount = (value: unknown): TradingAccount | null => {
+  if (!value || typeof value !== 'object') {
+    return null;
+  }
+
+  const maybe = value as Partial<TradingAccount>;
+  const userId = typeof maybe.user_id === 'string' ? maybe.user_id.trim() : '';
+  const brokerId = typeof maybe.broker_id === 'string' ? maybe.broker_id.trim() : '';
+  const tradeAddr = typeof maybe.front_trade_addr === 'string' ? maybe.front_trade_addr.trim() : '';
+  const marketAddr = typeof maybe.front_market_data_addr === 'string' ? maybe.front_market_data_addr.trim() : '';
+  const tradePort = normalizePort(maybe.front_trade_port);
+  const marketPort = normalizePort(maybe.front_market_data_port);
+
+  if (!userId || !brokerId || !tradeAddr || !marketAddr || tradePort === null || marketPort === null) {
+    return null;
+  }
+
+  if (!isValidIpv4(tradeAddr) || !isValidIpv4(marketAddr)) {
+    return null;
+  }
+
+  return {
+    user_id: userId,
+    broker_id: brokerId,
+    front_trade_addr: tradeAddr,
+    front_trade_port: tradePort,
+    front_market_data_addr: marketAddr,
+    front_market_data_port: marketPort
+  };
+};
+
 const normalizeSettings = (settings?: Partial<AppSettings> | null): AppSettings => ({
   theme: normalizeTheme(settings?.theme),
   language: normalizeLanguage(settings?.language),
@@ -101,7 +147,8 @@ const normalizeSettings = (settings?: Partial<AppSettings> | null): AppSettings 
       acc[key] = { ...DATA_SOURCE_DEFAULTS[key] };
     }
     return acc;
-  }, {} as Record<DataSourceKey, DataSourceEntry>)
+  }, {} as Record<DataSourceKey, DataSourceEntry>),
+  tradingAccount: normalizeTradingAccount(settings?.tradingAccount)
 });
 
 const defaultSettings = (): AppSettings => ({
@@ -109,7 +156,8 @@ const defaultSettings = (): AppSettings => ({
   language: 'system',
   marketDataEndpoint: DEFAULT_MARKET_ENDPOINT,
   tradingEndpoint: DEFAULT_TRADING_ENDPOINT,
-  dataSources: { ...DATA_SOURCE_DEFAULTS }
+  dataSources: { ...DATA_SOURCE_DEFAULTS },
+  tradingAccount: null
 });
 
 const readSettingsFromDisk = async (): Promise<AppSettings | null> => {

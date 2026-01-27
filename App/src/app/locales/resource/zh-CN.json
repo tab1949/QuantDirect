@@ -60,6 +60,20 @@
     "home": {
         "welcome": "欢迎"
     },
+    "tradingPage": {
+        "setup_title": "设置交易账户",
+        "setup_desc": "首次使用交易功能前，需要填写交易账户与前置服务器地址。",
+        "user_id": "交易账户（user_id）",
+        "broker_id": "经纪商ID",
+        "front_trade_addr": "交易前置服务器地址",
+        "front_trade_port": "交易前置服务器端口",
+        "front_market_data_addr": "行情前置服务器地址",
+        "front_market_data_port": "行情前置服务器端口",
+        "save": "保存",
+        "validation_error": "请修正标红的字段。",
+        "validation_hint": "请输入所有字段。",
+        "placeholder": "保存账号信息后，将显示交易工作区。"
+    },
     "explore": {
         "list": {
             "overview": "总览",

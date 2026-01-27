@@ -27,7 +27,7 @@ export const Page = styled.div<{ $darkMode: boolean}>`
   --theme-accent-color: ${props => props.$darkMode? '#5a6470' : '#9ca3af'};
   --theme-border-color: ${props => props.$darkMode? '#3a4149' : '#d1d5db'};
   --theme-separator-color: ${props => props.$darkMode ? 'rgba(184, 194, 208, 0.3)' : 'rgba(107, 114, 128, 0.4)'};
-  --theme-sidebar-bg-color: ${props => props.$darkMode ? '#4b5155' : '#c6cdd2'};
+  --theme-sidebar-bg-color: ${props => props.$darkMode ? '#3f4346' : '#c6cdd2'};
 `;
 
 export const CommonHeader = styled.div<{ $darkMode: boolean}>`
