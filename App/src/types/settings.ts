@@ -19,6 +19,8 @@ export interface DataSourceEntry {
 export interface AppSettings {
   theme: ThemeSetting;
   language: LanguageSetting;
+  engineAddress: string;
+  enginePort: number;
   marketDataEndpoint: string;
   tradingEndpoint: string;
   dataSources: Record<DataSourceKey, DataSourceEntry>;

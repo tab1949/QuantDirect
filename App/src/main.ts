@@ -31,6 +31,8 @@ const ZOOM_STEP = 0.1;
 const MIN_ZOOM = 0.5;
 const MAX_ZOOM = 3;
 
+const DEFAULT_ENGINE_ADDRESS = 'localhost';
+const DEFAULT_ENGINE_PORT = 9999;
 const DEFAULT_MARKET_ENDPOINT = 'ws://localhost:8888/market_data';
 const DEFAULT_TRADING_ENDPOINT = 'ws://localhost:8888/trading';
 
@@ -118,6 +120,10 @@ const normalizeTradingAccount = (value: unknown): TradingAccount | null => {
 const normalizeSettings = (settings?: Partial<AppSettings> | null): AppSettings => ({
   theme: normalizeTheme(settings?.theme),
   language: normalizeLanguage(settings?.language),
+  engineAddress: typeof settings?.engineAddress === 'string' && settings.engineAddress.trim().length > 0
+    ? settings.engineAddress.trim()
+    : DEFAULT_ENGINE_ADDRESS,
+  enginePort: normalizePort(settings?.enginePort) ?? DEFAULT_ENGINE_PORT,
   marketDataEndpoint: typeof settings?.marketDataEndpoint === 'string' && settings.marketDataEndpoint.trim().length > 0
     ? settings.marketDataEndpoint.trim()
     : DEFAULT_MARKET_ENDPOINT,
@@ -147,6 +153,8 @@ const normalizeSettings = (settings?: Partial<AppSettings> | null): AppSettings 
 const defaultSettings = (): AppSettings => ({
   theme: 'system',
   language: 'system',
+  engineAddress: DEFAULT_ENGINE_ADDRESS,
+  enginePort: DEFAULT_ENGINE_PORT,
   marketDataEndpoint: DEFAULT_MARKET_ENDPOINT,
   tradingEndpoint: DEFAULT_TRADING_ENDPOINT,
   dataSources: { ...DATA_SOURCE_DEFAULTS },

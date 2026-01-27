@@ -7,7 +7,7 @@ import { getDetectedLanguage } from '../locales/client-i18n';
 import { ListItem, ScrollList } from '../components/BasicLayout';
 import type { AppSettings, DataSourceKey, DataSourceEntry } from '../../../types/settings';
 import type { ElectronAPI } from '../../../types/window-controls';
-import { normalizeTradingAccount } from "../utils/validation";
+import { normalizeTradingAccount, normalizePort } from "../utils/validation";
 
 type SettingsPageProps = {
     settings: AppSettings;
@@ -49,9 +49,14 @@ export const DATA_SOURCE_DEFAULTS = {
   optionsTick: { localPath: '', apiUrl: 'https://data.tabxx.net/api/options' }
 } as const;
 
+const DEFAULT_ENGINE_ADDRESS = 'localhost';
+const DEFAULT_ENGINE_PORT = 9999;
+
 export const DEFAULT_SETTINGS: AppSettings = {
   theme: 'system',
   language: 'system',
+  engineAddress: DEFAULT_ENGINE_ADDRESS,
+  enginePort: DEFAULT_ENGINE_PORT,
   marketDataEndpoint: 'ws://localhost:8888/market_data',
   tradingEndpoint: 'ws://localhost:8888/trading',
   dataSources: { ...DATA_SOURCE_DEFAULTS },
@@ -94,6 +99,10 @@ const normalizeLanguageSetting = (language?: AppSettings['language']): AppSettin
 export const normalizeSettings = (settings?: Partial<AppSettings> | null): AppSettings => ({
   theme: normalizeThemeSetting(settings?.theme),
   language: normalizeLanguageSetting(settings?.language),
+    engineAddress: typeof settings?.engineAddress === 'string' && settings.engineAddress.trim().length > 0
+        ? settings.engineAddress.trim()
+        : DEFAULT_ENGINE_ADDRESS,
+    enginePort: normalizePort(settings?.enginePort) ?? DEFAULT_ENGINE_PORT,
   marketDataEndpoint: typeof settings?.marketDataEndpoint === 'string' && settings.marketDataEndpoint.trim().length > 0
     ? settings.marketDataEndpoint.trim()
     : DEFAULT_SETTINGS.marketDataEndpoint,
@@ -442,6 +451,62 @@ export default function SettingsPage({ settings, onChange, darkMode }: SettingsP
                         </div>
 
                         <div>
+                            <OptionTitle title={t('settings.engine')} />
+                            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+                                <input
+                                    type="text"
+                                    aria-label={t('settings.server_address')}
+                                    placeholder={t('settings.server_address')}
+                                    value={settings.engineAddress}
+                                    onChange={(e) => onChange({ engineAddress: e.target.value })}
+                                    style={{
+                                        flex: '1 1 220px',
+                                        padding: '10px 12px',
+                                        borderRadius: '8px',
+                                        border: '1px solid var(--theme-border-color)',
+                                        backgroundColor: 'rgba(0,0,0,0.02)',
+                                        color: 'var(--theme-font-color-content)'
+                                    }}
+                                />
+                                <span style={{ color: 'var(--theme-font-color)' }}>:</span>
+                                <input
+                                    type="number"
+                                    aria-label={t('settings.engine_port')}
+                                    placeholder={t('settings.engine_port')}
+                                    value={settings.enginePort || ''}
+                                    onChange={(e) => {
+                                        const parsed = normalizePort(e.target.value);
+                                        onChange({ enginePort: parsed ?? 0 });
+                                    }}
+                                    style={{
+                                        flex: '1 1 220px',
+                                        padding: '10px 12px',
+                                        borderRadius: '8px',
+                                        border: '1px solid var(--theme-border-color)',
+                                        backgroundColor: 'rgba(0,0,0,0.02)',
+                                        color: 'var(--theme-font-color-content)'
+                                    }}
+                                />
+                            </div>
+                            <div
+                                style={{
+                                    marginTop: '6px',
+                                    fontFamily: 'Consolas, SFMono-Regular, Menlo, monospace',
+                                    fontSize: '13px',
+                                    color: 'var(--theme-font-color)',
+                                    background: 'rgba(0,0,0,0.03)',
+                                    border: '1px solid var(--theme-border-color)',
+                                    borderRadius: '8px',
+                                    padding: '8px 10px'
+                                }}
+                            >
+                                {(settings.engineAddress?.trim() || '') && (settings.enginePort && settings.enginePort > 0)
+                                    ? `${settings.engineAddress.trim().replace(/\/+$/, '')}:${settings.enginePort}`
+                                    : settings.engineAddress?.trim() || t('settings.engine_preview_placeholder')}
+                            </div>
+                        </div>
+
+                        <div>
                             <OptionTitle title={t('settings.theme')} />
                             <div style={{ display: 'flex', flexWrap: 'wrap' }}>
                                 {themeOptions.map((option) => (
@@ -533,6 +598,8 @@ export default function SettingsPage({ settings, onChange, darkMode }: SettingsP
         onChange,
         parseEndpoint,
         selectedCategory,
+        settings.engineAddress,
+        settings.enginePort,
         settings.dataSources,
         settings.language,
         settings.marketDataEndpoint,
