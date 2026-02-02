@@ -1,6 +1,7 @@
 /*
  * Shared type definitions for QDEngine WebSocket client.
  */
+export * as WebCtpMessage from "./webctp/message";
 
 export enum ReportCode {
   AuthenticateFailed = -2,
@@ -12,10 +13,10 @@ export enum ReportCode {
   WebCtpOperationAck = 4,
 }
 
-export type Report<T = unknown> = {
+export type Report = {
   code: ReportCode;
   message: string;
-  data: T;
+  data: any;
 };
 
 export type HandshakeInstruction = { token: string };
@@ -31,8 +32,7 @@ export type TestCancelInstruction = { reference: number };
 export type TestQueryInstruction = { reference: number };
 
 export type WebCtpMarketDataConnectInstruction = {
-  addr: string;
-  port: number;
+  url: string;
   broker_id: string;
   user_id: string;
 };
@@ -53,8 +53,7 @@ export type WebCtpMarketDataTradingDayInstruction = Record<string, never>;
 export type WebCtpMarketDataDisconnectInstruction = Record<string, never>;
 
 export type WebCtpTradeConnectInstruction = {
-  addr: string;
-  port: number;
+  url: string;
   broker_id: string;
   investor_id: string;
 };

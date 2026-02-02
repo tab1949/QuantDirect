@@ -1,5 +1,6 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import type { Input } from 'electron';
+import { spawn, type ChildProcess } from 'node:child_process';
 import fs from 'node:fs';
 import fsPromises from 'node:fs/promises';
 import path from 'node:path';
@@ -33,6 +34,7 @@ const MAX_ZOOM = 3;
 
 const DEFAULT_ENGINE_ADDRESS = 'localhost';
 const DEFAULT_ENGINE_PORT = 9999;
+const DEFAULT_ENGINE_AUTOSTART = true;
 const DEFAULT_MARKET_ENDPOINT = 'ws://localhost:8888/market_data';
 const DEFAULT_TRADING_ENDPOINT = 'ws://localhost:8888/trading';
 
@@ -92,6 +94,7 @@ const normalizeTradingAccount = (value: unknown): TradingAccount | null => {
   }
 
   const maybe = value as Partial<TradingAccount>;
+  const alias = typeof maybe.alias === 'string' ? maybe.alias.trim() : '';
   const userId = typeof maybe.user_id === 'string' ? maybe.user_id.trim() : '';
   const brokerId = typeof maybe.broker_id === 'string' ? maybe.broker_id.trim() : '';
   const tradeAddr = typeof maybe.front_trade_addr === 'string' ? maybe.front_trade_addr.trim() : '';
@@ -108,6 +111,7 @@ const normalizeTradingAccount = (value: unknown): TradingAccount | null => {
   }
 
   return {
+    alias: alias || userId,
     user_id: userId,
     broker_id: brokerId,
     front_trade_addr: tradeAddr,
@@ -124,12 +128,15 @@ const normalizeSettings = (settings?: Partial<AppSettings> | null): AppSettings 
     ? settings.engineAddress.trim()
     : DEFAULT_ENGINE_ADDRESS,
   enginePort: normalizePort(settings?.enginePort) ?? DEFAULT_ENGINE_PORT,
+  startQDEngine: typeof settings?.startQDEngine === 'boolean' ? settings.startQDEngine : DEFAULT_ENGINE_AUTOSTART,
   marketDataEndpoint: typeof settings?.marketDataEndpoint === 'string' && settings.marketDataEndpoint.trim().length > 0
     ? settings.marketDataEndpoint.trim()
     : DEFAULT_MARKET_ENDPOINT,
   tradingEndpoint: typeof settings?.tradingEndpoint === 'string' && settings.tradingEndpoint.trim().length > 0
     ? settings.tradingEndpoint.trim()
     : DEFAULT_TRADING_ENDPOINT,
+  tradingAppId: typeof settings?.tradingAppId === 'string' ? settings.tradingAppId : null,
+  tradingAuthCode: typeof settings?.tradingAuthCode === 'string' ? settings.tradingAuthCode : null,
   dataSources: (Object.keys(DATA_SOURCE_DEFAULTS) as DataSourceKey[]).reduce<Record<DataSourceKey, DataSourceEntry>>((acc, key) => {
     const entry = settings?.dataSources?.[key];
     const localPath = typeof entry?.localPath === 'string' ? entry.localPath.trim() : '';
@@ -155,8 +162,11 @@ const defaultSettings = (): AppSettings => ({
   language: 'system',
   engineAddress: DEFAULT_ENGINE_ADDRESS,
   enginePort: DEFAULT_ENGINE_PORT,
+  startQDEngine: DEFAULT_ENGINE_AUTOSTART,
   marketDataEndpoint: DEFAULT_MARKET_ENDPOINT,
   tradingEndpoint: DEFAULT_TRADING_ENDPOINT,
+  tradingAppId: null,
+  tradingAuthCode: null,
   dataSources: { ...DATA_SOURCE_DEFAULTS },
   tradingAccount: null
 });
@@ -198,7 +208,44 @@ const saveSettings = async (settings: AppSettings): Promise<AppSettings> => {
 const SETTINGS_FILENAME = 'settings.json';
 
 let mainWindow: BrowserWindow | null = null;
+let engineProcess: ChildProcess | null = null;
 const gotTheLock = app.requestSingleInstanceLock();
+
+const stopQDEngineIfRunning = () => {
+  if (engineProcess && !engineProcess.killed) {
+    engineProcess.kill();
+  }
+  engineProcess = null;
+};
+
+const startQDEngineIfEnabled = async (settings: AppSettings) => {
+  if (!settings.startQDEngine) {
+    return;
+  }
+
+  if (engineProcess && !engineProcess.killed) {
+    return;
+  }
+
+  try {
+    engineProcess = spawn('qd-engine', ['-H', settings.engineAddress, '-p', String(settings.enginePort)], {
+      stdio: 'ignore',
+      windowsHide: true
+    });
+
+    engineProcess.once('exit', () => {
+      engineProcess = null;
+    });
+
+    engineProcess.once('error', (error) => {
+      console.error('Failed to start qd-engine:', error);
+      engineProcess = null;
+    });
+  } catch (error) {
+    console.error('Unable to launch qd-engine:', error);
+    engineProcess = null;
+  }
+};
 
 const resolveIconPath = (): string | undefined => {
   for (const filename of iconFilenames) {
@@ -428,8 +475,12 @@ if (!gotTheLock) {
     }
   });
 
-  app.whenReady().then(() => {
+  app.whenReady().then(async () => {
     app.setAppUserModelId('QuantDirect');
+
+    const settings = await ensureSettings();
+    await startQDEngineIfEnabled(settings);
+
     mainWindow = createMainWindow();
 
     app.on('activate', () => {
@@ -440,8 +491,13 @@ if (!gotTheLock) {
   });
 
   app.on('window-all-closed', () => {
+    stopQDEngineIfRunning();
     if (process.platform !== 'darwin') {
       app.quit();
     }
+  });
+
+  app.on('before-quit', () => {
+    stopQDEngineIfRunning();
   });
 }

@@ -13,6 +13,8 @@ type SettingsPageProps = {
     settings: AppSettings;
     onChange: (patch: Partial<AppSettings>) => void;
     darkMode: boolean;
+    engineStatus?: 'connecting' | 'connected' | 'disconnected';
+    onEngineConnect?: () => void;
 };
 
 type Category = 'general' | 'data' | 'trading';
@@ -51,14 +53,18 @@ export const DATA_SOURCE_DEFAULTS = {
 
 const DEFAULT_ENGINE_ADDRESS = 'localhost';
 const DEFAULT_ENGINE_PORT = 9999;
+const DEFAULT_ENGINE_AUTOSTART = true;
 
 export const DEFAULT_SETTINGS: AppSettings = {
   theme: 'system',
   language: 'system',
   engineAddress: DEFAULT_ENGINE_ADDRESS,
   enginePort: DEFAULT_ENGINE_PORT,
+  startQDEngine: DEFAULT_ENGINE_AUTOSTART,
   marketDataEndpoint: 'ws://localhost:8888/market_data',
   tradingEndpoint: 'ws://localhost:8888/trading',
+  tradingAppId: '',
+  tradingAuthCode: '',
   dataSources: { ...DATA_SOURCE_DEFAULTS },
   tradingAccount: null
 };
@@ -103,12 +109,15 @@ export const normalizeSettings = (settings?: Partial<AppSettings> | null): AppSe
         ? settings.engineAddress.trim()
         : DEFAULT_ENGINE_ADDRESS,
     enginePort: normalizePort(settings?.enginePort) ?? DEFAULT_ENGINE_PORT,
+    startQDEngine: typeof settings?.startQDEngine === 'boolean' ? settings.startQDEngine : DEFAULT_ENGINE_AUTOSTART,
   marketDataEndpoint: typeof settings?.marketDataEndpoint === 'string' && settings.marketDataEndpoint.trim().length > 0
     ? settings.marketDataEndpoint.trim()
     : DEFAULT_SETTINGS.marketDataEndpoint,
   tradingEndpoint: typeof settings?.tradingEndpoint === 'string' && settings.tradingEndpoint.trim().length > 0
     ? settings.tradingEndpoint.trim()
     : DEFAULT_SETTINGS.tradingEndpoint,
+    tradingAppId: typeof settings?.tradingAppId === 'string' ? settings.tradingAppId.trim() : '',
+    tradingAuthCode: typeof settings?.tradingAuthCode === 'string' ? settings.tradingAuthCode.trim() : '',
   dataSources: (Object.keys(DATA_SOURCE_DEFAULTS) as (keyof typeof DATA_SOURCE_DEFAULTS)[]).reduce((acc, key) => {
     const entry = settings?.dataSources?.[key];
     const localPath = typeof entry?.localPath === 'string' ? entry.localPath.trim() : '';
@@ -343,7 +352,7 @@ function DataSourceRow({ id, label, defaults, entry, normalize, onChange, t }: D
     );
 }
 
-export default function SettingsPage({ settings, onChange, darkMode }: SettingsPageProps) {
+export default function SettingsPage({ settings, onChange, darkMode, engineStatus = 'disconnected', onEngineConnect }: SettingsPageProps) {
     const { t } = useTranslation();
     const [selectedCategory, setSelectedCategory] = useState<Category>('general');
     const [settingsPath, setSettingsPath] = useState<string>('');
@@ -488,23 +497,70 @@ export default function SettingsPage({ settings, onChange, darkMode }: SettingsP
                                     }}
                                 />
                             </div>
-                            <div
-                                style={{
-                                    marginTop: '6px',
-                                    fontFamily: 'Consolas, SFMono-Regular, Menlo, monospace',
-                                    fontSize: '13px',
-                                    color: 'var(--theme-font-color)',
-                                    background: 'rgba(0,0,0,0.03)',
-                                    border: '1px solid var(--theme-border-color)',
-                                    borderRadius: '8px',
-                                    padding: '8px 10px'
-                                }}
-                            >
-                                {(settings.engineAddress?.trim() || '') && (settings.enginePort && settings.enginePort > 0)
-                                    ? `${settings.engineAddress.trim().replace(/\/+$/, '')}:${settings.enginePort}`
-                                    : settings.engineAddress?.trim() || t('settings.engine_preview_placeholder')}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '6px', flexWrap: 'nowrap' }}>
+                                <div
+                                    style={{
+                                        flex: 1,
+                                        minWidth: 0,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '10px',
+                                        fontSize: '13px',
+                                        color: 'var(--theme-font-color)',
+                                        background: 'rgba(0,0,0,0.03)',
+                                        border: '1px solid var(--theme-border-color)',
+                                        borderRadius: '8px',
+                                        padding: '8px 10px'
+                                    }}
+                                >
+                                    <span 
+                                        style={{ 
+                                            flex: 1, 
+                                            minWidth: 0, 
+                                            overflow: 
+                                            'hidden', 
+                                            textOverflow: 'ellipsis', 
+                                            whiteSpace: 'nowrap' 
+                                    }}>
+                                        {(settings.engineAddress?.trim() || '') && (settings.enginePort && settings.enginePort > 0)
+                                            ? `${settings.engineAddress.trim().replace(/\/+$/, '')}:${settings.enginePort}`
+                                            : settings.engineAddress?.trim() || t('settings.engine_preview_placeholder')}
+                                    </span>
+                                    <span 
+                                        style={{ 
+                                            color: engineStatus === 'connected' ? '#16a34a' : engineStatus === 'connecting' ? '#f59e0b' : '#dc2626', 
+                                            whiteSpace: 'nowrap' 
+                                    }}>
+                                        {engineStatus === 'connected' ? t('basic.engine_connected') : engineStatus === 'connecting' ? t('basic.engine_connecting') : t('basic.engine_disconnected')}
+                                    </span>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => onEngineConnect?.()}
+                                    style={{
+                                        padding: '8px 12px',
+                                        borderRadius: '8px',
+                                        border: '1px solid var(--theme-border-color)',
+                                        backgroundColor: 'var(--theme-border-color)',
+                                        color: 'var(--theme-font-color-content)',
+                                        cursor: 'pointer',
+                                        marginLeft: 'auto'
+                                    }}
+                                >
+                                    {t('settings.engine_connect_try')}
+                                </button>
                             </div>
                         </div>
+
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                            <input
+                                type="checkbox"
+                                checked={settings.startQDEngine}
+                                onChange={(e) => onChange({ startQDEngine: e.target.checked })}
+                                style={{ width: '16px', height: '16px' }}
+                            />
+                            <span style={{ color: 'var(--theme-font-color-content)' }}>{t('settings.engine_autostart')}</span>
+                        </label>
 
                         <div>
                             <OptionTitle title={t('settings.theme')} />
@@ -587,6 +643,42 @@ export default function SettingsPage({ settings, onChange, darkMode }: SettingsP
                             onChange={(endpoint) => onChange({ tradingEndpoint: endpoint })}
                             t={t}
                         />
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            <div style={{ fontWeight: 600 }}>{t('settings.ctp_app_id')}</div>
+                            <input
+                                type="text"
+                                placeholder={t('settings.ctp_app_id')}
+                                value={settings.tradingAppId || ''}
+                                onChange={(e) => onChange({ tradingAppId: e.target.value })}
+                                style={{
+                                    width: '100%',
+                                    padding: '10px 12px',
+                                    borderRadius: '8px',
+                                    border: '1px solid var(--theme-border-color)',
+                                    backgroundColor: 'rgba(0,0,0,0.02)',
+                                    color: 'var(--theme-font-color-content)'
+                                }}
+                            />
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            <div style={{ fontWeight: 600 }}>{t('settings.ctp_auth_code')}</div>
+                            <input
+                                type="text"
+                                placeholder={t('settings.ctp_auth_code')}
+                                value={settings.tradingAuthCode || ''}
+                                onChange={(e) => onChange({ tradingAuthCode: e.target.value })}
+                                style={{
+                                    width: '100%',
+                                    padding: '10px 12px',
+                                    borderRadius: '8px',
+                                    border: '1px solid var(--theme-border-color)',
+                                    backgroundColor: 'rgba(0,0,0,0.02)',
+                                    color: 'var(--theme-font-color-content)'
+                                }}
+                            />
+                        </div>
                     </div>
                 );
         }
@@ -605,9 +697,12 @@ export default function SettingsPage({ settings, onChange, darkMode }: SettingsP
         settings.marketDataEndpoint,
         settings.theme,
         settings.tradingEndpoint,
+        settings.tradingAppId,
+        settings.tradingAuthCode,
         t,
         themeOptions,
-        settingsPath
+        settingsPath,
+        engineStatus
     ]);
 
     return (

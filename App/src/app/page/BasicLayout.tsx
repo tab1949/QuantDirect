@@ -9,6 +9,7 @@ import SettingsPage from "./Settings/Page";
 import TradingPage from "./Trading/Page";
 import { DATA_SOURCE_DEFAULTS, DEFAULT_SETTINGS, normalizeSettings, resolveDarkMode, resolveLanguage } from "./Settings/Page";
 import i18n from "./locales/client-i18n";
+import { QDEngineClient } from "./utils/engine";
 import {
   Page,
   CommonHeader,
@@ -55,6 +56,8 @@ function FooterClock() {
         {'(UTC+8) '}{` ${currentDate} ${currentTime} `}
   </div>;
 }
+ 
+export let engineClient: QDEngineClient | null = null;
 
 export default function BasicLayout() {
   type Page = 'home' | 'explore' | 'research' | 'trading' | 'community' | 'help' | 'dashboard' | 'settings';
@@ -69,7 +72,9 @@ export default function BasicLayout() {
   const [isMaximized, setIsMaximized] = useState(false);
   const [displayScaleInfo, setDisplayScaleInfo] = useState<string | null>(null);
   const [settingsReady, setSettingsReady] = useState(false);
-
+  const [engineStatus, setEngineStatus] = useState<'connecting' | 'connected' | 'disconnected'>('disconnected');
+  const [engineConnectVersion, setEngineConnectVersion] = useState(0);
+  const connectionSeqRef = useRef(0);
 
   const displayScaleInfoTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -111,8 +116,12 @@ export default function BasicLayout() {
   const handleSettingsChange = useCallback((patch: Partial<AppSettings>) => {
     setSettings((prev) => {
       const next = normalizeSettings({ ...prev, ...patch });
+      const engineChanged = next.engineAddress !== prev.engineAddress || next.enginePort !== prev.enginePort;
       applySettings(next);
       void persistSettings(next);
+      if (engineChanged) {
+        setEngineConnectVersion((v) => v + 1);
+      }
       return next;
     });
   }, [applySettings, persistSettings]);
@@ -159,6 +168,55 @@ export default function BasicLayout() {
       cancelled = true;
     };
   }, [applySettings]);
+
+  useEffect(() => {
+    if (!settingsReady) {
+      return undefined;
+    }
+
+    const prevClient = engineClient;
+    const currentSeq = ++connectionSeqRef.current;
+
+    const guardedSetStatus = (status: 'connecting' | 'connected' | 'disconnected') => {
+      if (connectionSeqRef.current === currentSeq) {
+        setEngineStatus(status);
+      }
+    };
+
+    const client = new QDEngineClient();
+    client.onClose = () => guardedSetStatus('disconnected');
+    client.onError = () => guardedSetStatus('disconnected');
+    engineClient = client;
+
+    // Ensure previous connection is closed without touching status of the new session.
+    if (prevClient) {
+      void prevClient.disconnect();
+    }
+
+    let cancelled = false;
+
+    const connect = async () => {
+      guardedSetStatus('connecting');
+      try {
+        await client.connect(settings.engineAddress, settings.enginePort);
+        if (!cancelled) {
+          guardedSetStatus('connected');
+        }
+      } catch (error) {
+        console.error('Failed to connect QDEngine', error);
+        if (!cancelled) {
+          guardedSetStatus('disconnected');
+        }
+      }
+    };
+
+    void connect();
+
+    return () => {
+      cancelled = true;
+      void client.disconnect();
+    };
+  }, [settings.engineAddress, settings.enginePort, settingsReady, engineConnectVersion]);
 
   useEffect(() => {
     if (settings.theme !== 'system' || typeof window === 'undefined' || !window.matchMedia) {
@@ -344,6 +402,8 @@ export default function BasicLayout() {
             {t('basic.community')}
           </HeaderElement>
 
+          <HeaderSeparator/>
+
           <HeaderElement $selected={selected === 'help'} onClick={() => setSelected('help')}>
             {t('basic.help')}
           </HeaderElement> 
@@ -352,8 +412,6 @@ export default function BasicLayout() {
             itemID="header_settings">
               {t('basic.settings')}
           </HeaderElement>
-
-          <HeaderSeparator/>
 
           {hasWindowControls && (
             <WindowControls>
@@ -410,11 +468,29 @@ export default function BasicLayout() {
             settings={settings}
             onChange={handleSettingsChange}
             darkMode={darkMode}
+            engineStatus={engineStatus}
+            onEngineConnect={() => setEngineConnectVersion((v) => v + 1)}
           />
         )}
         {ScaleInfoRect}
         <CommonFooter $darkMode={darkMode}>
-          {/* {t('basic.intro')} */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--theme-font-color)', marginLeft: '12px' }}>
+            <span
+              style={{
+                color: engineStatus === 'connected' ? '#16a34a' : engineStatus === 'connecting' ? '#f59e0b' : '#dc2626',
+                fontSize: '16px'
+              }}
+            >
+              ●
+            </span>
+            <span>
+              {engineStatus === 'connected'
+                ? t('basic.engine_connected')
+                : engineStatus === 'connecting'
+                  ? t('basic.engine_connecting')
+                  : t('basic.engine_disconnected')}
+            </span>
+          </div>
           <FooterClock/>
         </CommonFooter>
       </Page> 

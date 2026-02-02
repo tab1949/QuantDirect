@@ -29,6 +29,7 @@ export const normalizeTradingAccount = (
   }
 
   const maybe = value as Partial<AppSettings["tradingAccount"]>;
+  const alias = typeof maybe?.alias === "string" ? maybe.alias.trim() : "";
   const userId = typeof maybe?.user_id === "string" ? maybe.user_id.trim() : "";
   const brokerId = typeof maybe?.broker_id === "string" ? maybe.broker_id.trim() : "";
   const tradeAddr = typeof maybe?.front_trade_addr === "string" ? maybe.front_trade_addr.trim() : "";
@@ -45,6 +46,7 @@ export const normalizeTradingAccount = (
   }
 
   return {
+    alias: alias || userId,
     user_id: userId,
     broker_id: brokerId,
     front_trade_addr: tradeAddr,

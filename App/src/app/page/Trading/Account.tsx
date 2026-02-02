@@ -11,6 +11,7 @@ type TradingAccountProps = {
   settingsReady: boolean;
   darkMode: boolean;
   onChange: (patch: Partial<AppSettings>) => void;
+  openFormSignal?: number;
 };
 
 type FieldKey = keyof TradingAccount;
@@ -20,6 +21,7 @@ type FormState = Record<FieldKey, string>;
 type FieldErrors = Partial<Record<FieldKey, string>>;
 
 const EMPTY_FORM: FormState = {
+  alias: "",
   user_id: "",
   broker_id: "",
   front_trade_addr: "",
@@ -43,6 +45,7 @@ const hasCompleteAccount = (account: TradingAccount | null | undefined): account
 };
 
 const deriveFormState = (account: TradingAccount | null | undefined): FormState => ({
+  alias: account?.alias ?? account?.user_id ?? "",
   user_id: account?.user_id ?? "",
   broker_id: account?.broker_id ?? "",
   front_trade_addr: account?.front_trade_addr ?? "",
@@ -51,7 +54,7 @@ const deriveFormState = (account: TradingAccount | null | undefined): FormState 
   front_market_data_port: account ? String(account.front_market_data_port) : ""
 });
 
-export default function TradingAccount({ settings, settingsReady, darkMode, onChange }: TradingAccountProps) {
+export default function TradingAccount({ settings, settingsReady, darkMode, onChange, openFormSignal }: TradingAccountProps) {
   const { t } = useTranslation();
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -66,14 +69,25 @@ export default function TradingAccount({ settings, settingsReady, darkMode, onCh
     setShowOverlay(!hasCompleteAccount(settings.tradingAccount));
   }, [settings, settingsReady]);
 
+  useEffect(() => {
+    if (!settingsReady) {
+      return;
+    }
+    if (openFormSignal === undefined) {
+      return;
+    }
+    setShowOverlay(true);
+  }, [openFormSignal, settingsReady]);
+
   const fields = useMemo(
     () => [
-      { key: "user_id" as FieldKey, label: t("tradingPage.user_id") },
-      { key: "broker_id" as FieldKey, label: t("tradingPage.broker_id") },
-      { key: "front_trade_addr" as FieldKey, label: t("tradingPage.front_trade_addr") },
-      { key: "front_trade_port" as FieldKey, label: t("tradingPage.front_trade_port"), inputMode: "numeric" as const },
-      { key: "front_market_data_addr" as FieldKey, label: t("tradingPage.front_market_data_addr") },
-      { key: "front_market_data_port" as FieldKey, label: t("tradingPage.front_market_data_port"), inputMode: "numeric" as const }
+      { key: "user_id" as FieldKey, label: t("trading.user_id") },
+      { key: "alias" as FieldKey, label: t("trading.alias") },
+      { key: "broker_id" as FieldKey, label: t("trading.broker_id") },
+      { key: "front_trade_addr" as FieldKey, label: t("trading.front_trade_addr") },
+      { key: "front_trade_port" as FieldKey, label: t("trading.front_trade_port"), inputMode: "numeric" as const },
+      { key: "front_market_data_addr" as FieldKey, label: t("trading.front_market_data_addr") },
+      { key: "front_market_data_port" as FieldKey, label: t("trading.front_market_data_port"), inputMode: "numeric" as const }
     ],
     [t]
   );
@@ -89,6 +103,7 @@ export default function TradingAccount({ settings, settingsReady, darkMode, onCh
     const nextErrors: FieldErrors = {};
 
     const trimmed: FormState = {
+      alias: form.alias.trim(),
       user_id: form.user_id.trim(),
       broker_id: form.broker_id.trim(),
       front_trade_addr: form.front_trade_addr.trim(),
@@ -134,6 +149,7 @@ export default function TradingAccount({ settings, settingsReady, darkMode, onCh
     }
 
     const account: TradingAccount = {
+      alias: trimmed.alias || trimmed.user_id,
       user_id: trimmed.user_id,
       broker_id: trimmed.broker_id,
       front_trade_addr: trimmed.front_trade_addr,
@@ -194,10 +210,10 @@ export default function TradingAccount({ settings, settingsReady, darkMode, onCh
         }}
       >
         <div style={{ fontSize: "20px", fontWeight: 700, marginBottom: "6px" }}>
-          {t("tradingPage.setup_title")}
+          {t("trading.setup_title")}
         </div>
         <div style={{ color: "var(--theme-font-color)", marginBottom: "14px", lineHeight: 1.4 }}>
-          {t("tradingPage.setup_desc")}
+          {t("trading.setup_desc")}
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           {fields.map((field) => (
@@ -223,7 +239,7 @@ export default function TradingAccount({ settings, settingsReady, darkMode, onCh
           }}
         >
           <div style={{ color: showErrorHint ? "#f87171" : "var(--theme-font-color)", fontSize: "13px" }}>
-            {showErrorHint ? t("tradingPage.validation_error") : t("tradingPage.validation_hint")}
+            {showErrorHint ? t("trading.validation_error") : t("trading.validation_hint")}
           </div>
           <button
             type="button"
@@ -241,7 +257,7 @@ export default function TradingAccount({ settings, settingsReady, darkMode, onCh
               transition: "transform 120ms ease, filter 120ms ease"
             }}
           >
-            {t("tradingPage.save")}
+            {t("trading.save")}
           </button>
         </div>
       </div>

@@ -21,13 +21,17 @@ export interface AppSettings {
   language: LanguageSetting;
   engineAddress: string;
   enginePort: number;
+  startQDEngine: boolean;
   marketDataEndpoint: string;
   tradingEndpoint: string;
+  tradingAppId: string | null;
+  tradingAuthCode: string | null;
   dataSources: Record<DataSourceKey, DataSourceEntry>;
   tradingAccount: TradingAccount | null;
 }
 
 export interface TradingAccount {
+  alias: string;
   user_id: string;
   broker_id: string;
   front_trade_addr: string;
