@@ -84,6 +84,7 @@ export interface Performed {
     ErrorCode: number;
     RequestID: number;
     Message: string;
+    Ref: string;
 }
 
 export interface ErrorInfo {

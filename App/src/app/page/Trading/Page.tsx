@@ -77,6 +77,7 @@ export default function TradingPage({ settings, settingsReady, darkMode, onChang
         if (report.message == "webctp market data connected") {
           setStepStatus({color: "orange", info: t("trading.status_ctp_trade")});
           engineClient?.webCtpTradeConnectFront({
+            op_ref: "",
             addr: account?.front_trade_addr || "",
             port: account?.front_trade_port || 0
           });
@@ -87,6 +88,7 @@ export default function TradingPage({ settings, settingsReady, darkMode, onChang
       engineClient.onMdConnected = () => {
         setStepStatus({color: "orange", info: t("trading.status_ctp_market_login")});
         engineClient?.webCtpMarketDataLogin({
+          op_ref: "",
           password: password
         });
       }
@@ -101,18 +103,22 @@ export default function TradingPage({ settings, settingsReady, darkMode, onChang
           loginState = {isLoggedIn: true, timestamp: Date.now()};
           setMarketLoginInfo(info as WebCtpMessage.MdLogin);
           accountInfoIntervalRef.current = setInterval(() => {
-            engineClient?.webCtpTradeQueryTradingAccount();
+            engineClient?.webCtpTradeQueryTradingAccount({
+            op_ref: "",
+          });
           }, 500);
         }
       }
       
       engineClient.onTradeConnected = () => {
         engineClient?.webCtpTradeSet({
+          op_ref: "",
           broker_id: account?.broker_id || "",
           investor_id: account?.user_id || ""
         });
         setStepStatus({color: "orange", info: t("trading.status_ctp_auth")});
         engineClient?.webCtpTradeAuth({
+          op_ref: "",
           app_id: settings.tradingAppId || "",
           auth_code: settings.tradingAuthCode || "",
           user_id: account?.user_id || ""
@@ -121,6 +127,7 @@ export default function TradingPage({ settings, settingsReady, darkMode, onChang
       engineClient.onTradeAuthenticate = () => {
         setStepStatus({color: "orange", info: t("trading.status_ctp_trade_login")});
         engineClient?.webCtpTradeLogin({
+          op_ref: "",
           user_id: account?.user_id || "",
           password: password
         });
@@ -129,6 +136,7 @@ export default function TradingPage({ settings, settingsReady, darkMode, onChang
         if (!err || err.code === 0) {
           setStepStatus({color: "orange", info: t("trading.status_ctp_market")});
           engineClient?.webCtpMarketDataConnectFront({
+            op_ref: "",
             addr: account?.front_market_data_addr || "",
             port: account?.front_market_data_port || 0
           });
@@ -223,7 +231,10 @@ export default function TradingPage({ settings, settingsReady, darkMode, onChang
 
   const handleLogout = () => {
     engineClient?.webCtpMarketDataDisconnect();
-    engineClient?.webCtpTradeLogout(account?.user_id || "");
+    engineClient?.webCtpTradeLogout({
+      op_ref: "",
+      user_id: account?.user_id || ""
+    });
     setStepStatus({color: "red", info: t("trading.status_not_logged_in")});
     if (accountInfoIntervalRef.current) {
       clearInterval(accountInfoIntervalRef.current);

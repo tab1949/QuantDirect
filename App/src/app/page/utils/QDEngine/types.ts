@@ -38,19 +38,33 @@ export type WebCtpMarketDataConnectInstruction = {
 };
 
 export type WebCtpMarketDataConnectFrontInstruction = {
+  op_ref: string;
   addr: string;
   port: number;
 };
 
-export type WebCtpMarketDataLoginInstruction = { password: string };
+export type WebCtpMarketDataLoginInstruction = { 
+  op_ref: string;
+  password: string;
+};
 
-export type WebCtpMarketDataSubscribeInstruction = { instruments: string[] };
+export type WebCtpMarketDataSubscribeInstruction = { 
+  op_ref: string;
+  instruments: string[]; 
+};
 
-export type WebCtpMarketDataUnsubscribeInstruction = { instruments: string[] };
+export type WebCtpMarketDataUnsubscribeInstruction = { 
+  op_ref: string;
+  instruments: string[];
+};
 
-export type WebCtpMarketDataTradingDayInstruction = Record<string, never>;
+export type WebCtpMarketDataTradingDayInstruction = {
+  op_ref: string;
+};
 
-export type WebCtpMarketDataDisconnectInstruction = Record<string, never>;
+export type WebCtpMarketDataDisconnectInstruction = {
+
+};
 
 export type WebCtpTradeConnectInstruction = {
   url: string;
@@ -59,41 +73,54 @@ export type WebCtpTradeConnectInstruction = {
 };
 
 export type WebCtpTradeConnectFrontInstruction = {
+  op_ref: string;
   addr: string;
   port: number;
 };
 
 export type WebCtpTradeSetInstruction = {
+  op_ref: string;
   broker_id?: string;
   investor_id?: string;
 };
 
-export type WebCtpTradeTradingDayInstruction = Record<string, never>;
+export type WebCtpTradeTradingDayInstruction = { 
+  op_ref: string 
+};
 
 export type WebCtpTradeAuthInstruction = {
+  op_ref: string;
   user_id: string;
   app_id: string;
   auth_code: string;
 };
 
 export type WebCtpTradeLoginInstruction = {
+  op_ref: string;
   user_id: string;
   password: string;
 };
 
 export type WebCtpTradeLogoutInstruction = {
+  op_ref: string;
   user_id: string;
 };
 
 export type WebCtpTradeQuerySettlementInfoInstruction = {
+  op_ref: string;
   trading_day: string;
 };
 
-export type WebCtpTradeConfirmSettlementInfoInstruction = Record<string, never>;
+export type WebCtpTradeConfirmSettlementInfoInstruction = {
+  op_ref: string;
+};
 
-export type WebCtpTradeQueryTradingAccountInstruction = Record<string, never>;
+export type WebCtpTradeQueryTradingAccountInstruction = {
+  op_ref: string;
+};
 
 export type WebCtpTradeInsertOrderInstruction = {
+  op_ref: string;
   instrument: string;
   exchange: string;
   reference: string;
@@ -106,6 +133,7 @@ export type WebCtpTradeInsertOrderInstruction = {
 };
 
 export type WebCtpTradeQueryOrderInstruction = {
+  op_ref: string;
   order_sys_id?: string;
   exchange_id?: string;
   from?: string;
@@ -113,6 +141,7 @@ export type WebCtpTradeQueryOrderInstruction = {
 };
 
 export type WebCtpTradeDeleteOrderInstruction = {
+  op_ref: string;
   exchange: string;
   instrument: string;
   delete_ref: number;
@@ -120,6 +149,7 @@ export type WebCtpTradeDeleteOrderInstruction = {
 };
 
 export type WebCtpTradeQueryInstrumentInstruction = {
+  op_ref: string;
   exchange?: string;
   instrument?: string;
   exchange_inst_id?: string;

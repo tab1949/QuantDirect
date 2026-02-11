@@ -77,6 +77,7 @@ export class QDEngineClient {
               ErrorCode: r.data.payload.err.code,
               Message:   r.data.payload.err.msg || "",
               RequestID: r.data.payload.info.req_id,
+              Ref:       r.data.payload.info.op_ref,
             });
             break;
           case WebCtpMessage.MDMsgCode.ERROR:
@@ -121,6 +122,7 @@ export class QDEngineClient {
               ErrorCode: r.data.payload.err.code,
               Message:   r.data.payload.err.msg || "",
               RequestID: r.data.payload.info.req_id,
+              Ref:       r.data.payload.info.op_ref,
             });
             break;
           case WebCtpMessage.TradeMsgCode.ERROR:
@@ -335,16 +337,16 @@ export class QDEngineClient {
     this.sendInstruction("WebCtpMarketDataLogin", data);
   }
 
-  webCtpMarketDataSubscribe(instruments: string[]): void {
-    this.sendInstruction("WebCtpMarketDataSubscribe", { instruments });
+  webCtpMarketDataSubscribe(data: WebCtpMarketDataSubscribeInstruction): void {
+    this.sendInstruction("WebCtpMarketDataSubscribe", data);
   }
 
-  webCtpMarketDataUnsubscribe(instruments: string[]): void {
-    this.sendInstruction("WebCtpMarketDataUnsubscribe", { instruments });
+  webCtpMarketDataUnsubscribe(data: WebCtpMarketDataUnsubscribeInstruction): void {
+    this.sendInstruction("WebCtpMarketDataUnsubscribe", data);
   }
 
-  webCtpMarketDataTradingDay(): void {
-    this.sendInstruction("WebCtpMarketDataTradingDay", {});
+  webCtpMarketDataTradingDay(data: WebCtpMarketDataTradingDayInstruction): void {
+    this.sendInstruction("WebCtpMarketDataTradingDay", data);
   }
 
   webCtpMarketDataDisconnect(): void {
@@ -364,8 +366,8 @@ export class QDEngineClient {
     this.sendInstruction("WebCtpTradeSet", data);
   }
 
-  webCtpTradeTradingDay(): void {
-    this.sendInstruction("WebCtpTradeTradingDay", {});
+  webCtpTradeTradingDay(data: WebCtpTradeTradingDayInstruction): void {
+    this.sendInstruction("WebCtpTradeTradingDay", data);
   }
 
   webCtpTradeAuth(data: WebCtpTradeAuthInstruction): void {
@@ -376,36 +378,36 @@ export class QDEngineClient {
     this.sendInstruction("WebCtpTradeLogin", data);
   }
 
-  webCtpTradeLogout(user_id: string): void {
-    this.sendInstruction("WebCtpTradeLogout", { user_id });
+  webCtpTradeLogout(data: WebCtpTradeLogoutInstruction): void {
+    this.sendInstruction("WebCtpTradeLogout", data);
   }
 
-  webCtpTradeQuerySettlementInfo(trading_day: string): void {
-    this.sendInstruction("WebCtpTradeQuerySettlementInfo", { trading_day });
+  webCtpTradeQuerySettlementInfo(data: WebCtpTradeQuerySettlementInfoInstruction): void {
+    this.sendInstruction("WebCtpTradeQuerySettlementInfo", data);
   }
 
-  webCtpTradeConfirmSettlementInfo(): void {
-    this.sendInstruction("WebCtpTradeConfirmSettlementInfo", {});
+  webCtpTradeConfirmSettlementInfo(data: WebCtpTradeConfirmSettlementInfoInstruction): void {
+    this.sendInstruction("WebCtpTradeConfirmSettlementInfo", data);
   }
 
-  webCtpTradeQueryTradingAccount(): void {
-    this.sendInstruction("WebCtpTradeQueryTradingAccount", {});
+  webCtpTradeQueryTradingAccount(data: WebCtpTradeQueryTradingAccountInstruction): void {
+    this.sendInstruction("WebCtpTradeQueryTradingAccount", data);
   }
 
   webCtpTradeInsertOrder(data: WebCtpTradeInsertOrderInstruction): void {
     this.sendInstruction("WebCtpTradeInsertOrder", data);
   }
 
-  webCtpTradeQueryOrder(filters: WebCtpTradeQueryOrderInstruction = {}): void {
-    this.sendInstruction("WebCtpTradeQueryOrder", filters);
+  webCtpTradeQueryOrder(data: WebCtpTradeQueryOrderInstruction): void {
+    this.sendInstruction("WebCtpTradeQueryOrder", data);
   }
 
   webCtpTradeDeleteOrder(data: WebCtpTradeDeleteOrderInstruction): void {
     this.sendInstruction("WebCtpTradeDeleteOrder", data);
   }
 
-  webCtpTradeQueryInstrument(filters: WebCtpTradeQueryInstrumentInstruction = {}): void {
-    this.sendInstruction("WebCtpTradeQueryInstrument", filters);
+  webCtpTradeQueryInstrument(data: WebCtpTradeQueryInstrumentInstruction): void {
+    this.sendInstruction("WebCtpTradeQueryInstrument", data);
   }
 
   webCtpTradeDisconnect(): void {
