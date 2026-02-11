@@ -82,6 +82,9 @@ export class QDEngineClient {
           case WebCtpMessage.MDMsgCode.ERROR:
             this.onMdError?.(r.data.payload, r.data.payload as WebCtpMessage.ErrorMessage);
             break;
+          case WebCtpMessage.MDMsgCode.ERROR_SIZE:
+            this.onMdErrorSize?.(r.data.payload);
+            break;
           case WebCtpMessage.MDMsgCode.CONNECTED:
             this.onMdConnected?.();
             break;
@@ -191,6 +194,7 @@ export class QDEngineClient {
   };
   onMdPerformed?: (err: WebCtpMessage.Performed) => void;
   onMdError?: (err: WebCtpMessage.ErrorInfo | null, msg: WebCtpMessage.ErrorMessage) => void;
+  onMdErrorSize?: (err: WebCtpMessage.ErrorInfo | null) => void;
   onMdConnected?: () => void;
   onMdDisconnected?: (reason: number) => void;
   onMdLogin?: (err: WebCtpMessage.ErrorInfo | null, info: WebCtpMessage.MdLogin | WebCtpMessage.ErrorMessage) => void;

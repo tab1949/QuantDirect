@@ -1,6 +1,5 @@
 # directories
-.github
-.git
+.*
 Server/data_backup
 archived
 target
