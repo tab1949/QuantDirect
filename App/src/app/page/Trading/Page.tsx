@@ -26,7 +26,7 @@ type LoginState = {
 let loginState: LoginState | null = null;
 
 function InfoLine({label, value}: {label: string, value: any}) {
-  return <div style={{ display: "flex", justifyContent: "space-between" }}><strong>{label}:</strong> <span>{value}</span></div>
+  return <div style={{ display: "flex", justifyContent: "space-between" }}><strong>{label}:</strong> <span style={{ display: "flex", alignSelf: "center"}}>{value}</span></div>
 }
 
 export default function TradingPage({ settings, settingsReady, darkMode, onChange }: TradingPageProps) {
@@ -268,12 +268,12 @@ export default function TradingPage({ settings, settingsReady, darkMode, onChang
   }}>
     {account ? (
       <div>
-        <InlineT3>{t("trading.account")}: {account.alias || account.user_id}</InlineT3>
+        <InlineT3><InfoLine label={t("trading.account")} value={account.alias || account.user_id}/></InlineT3>
         <div style={{ display: "flex", flexDirection: "column", gap: "10px", fontSize: "15px", marginTop: "8px" }}>
-          <span>{t("trading.user_id")}: {account.user_id}</span>
-          <span>{t("trading.broker_id")}: {account.broker_id}</span>
-          <span>{t("trading.front_trade_addr")}: {tradeEndpoint}</span>
-          <span>{t("trading.front_market_data_addr")}: {marketEndpoint}</span>
+          <InfoLine label={t("trading.user_id")} value={account.user_id}/>
+          <InfoLine label={t("trading.broker_id")} value={account.broker_id}/>
+          <InfoLine label={t("trading.front_trade_addr")} value={tradeEndpoint}/>
+          <InfoLine label={t("trading.front_market_data_addr")} value={marketEndpoint}/>
         </div>
       </div>
     ) : (
